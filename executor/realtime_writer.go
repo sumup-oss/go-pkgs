@@ -18,7 +18,7 @@ import (
 	"bytes"
 	"regexp"
 
-	"github.com/sumup/go-pkgs/logger"
+	"github.com/sumup-oss/go-pkgs/logger"
 )
 
 var removeColorRegex = regexp.MustCompile(`\x1B\[\d+m`)

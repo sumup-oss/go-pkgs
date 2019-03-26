@@ -14,7 +14,7 @@
 
 package testlogger
 
-import "github.com/sumup/go-pkgs/logger"
+import "github.com/sumup-oss/go-pkgs/logger"
 
 var _ logger.Logger = (*NilLogger)(nil)
 

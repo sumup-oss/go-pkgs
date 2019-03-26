@@ -19,7 +19,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/sumup/go-pkgs/os/ostest"
+	"github.com/sumup-oss/go-pkgs/os/ostest"
 )
 
 func TestNewHelm(t *testing.T) {

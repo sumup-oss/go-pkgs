@@ -20,7 +20,7 @@ import (
 	"os/user"
 	"testing"
 
-	"github.com/sumup/go-pkgs/os"
+	"github.com/sumup-oss/go-pkgs/os"
 
 	"github.com/stretchr/testify/mock"
 )

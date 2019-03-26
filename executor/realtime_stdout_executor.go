@@ -18,7 +18,7 @@ import (
 	"bytes"
 	"io"
 
-	"github.com/sumup/go-pkgs/os"
+	"github.com/sumup-oss/go-pkgs/os"
 )
 
 var _ os.OsExecutor = (*RealtimeStdoutExecutor)(nil)

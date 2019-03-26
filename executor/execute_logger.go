@@ -17,8 +17,8 @@ package executor
 import (
 	"strings"
 
-	"github.com/sumup/go-pkgs/logger"
-	"github.com/sumup/go-pkgs/os"
+	"github.com/sumup-oss/go-pkgs/logger"
+	"github.com/sumup-oss/go-pkgs/os"
 )
 
 var _ os.OsExecutor = (*ExecuteLogger)(nil)

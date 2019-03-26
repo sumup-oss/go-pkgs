@@ -18,7 +18,7 @@ import (
 	"github.com/mattes/go-expand-tilde"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/sumup/go-pkgs/testutils"
+	"github.com/sumup-oss/go-pkgs/testutils"
 	"path/filepath"
 	"runtime"
 	"testing"

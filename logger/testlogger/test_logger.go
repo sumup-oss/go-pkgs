@@ -19,7 +19,7 @@ import (
 	"os"
 	"sync"
 
-	"github.com/sumup/go-pkgs/logger"
+	"github.com/sumup-oss/go-pkgs/logger"
 )
 
 var _ logger.Logger = (*TestLogger)(nil)

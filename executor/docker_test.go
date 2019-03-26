@@ -18,7 +18,7 @@ import (
 	"errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/sumup/go-pkgs/os/ostest"
+	"github.com/sumup-oss/go-pkgs/os/ostest"
 	"testing"
 )
 

@@ -20,7 +20,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/sumup/go-pkgs/os"
+	"github.com/sumup-oss/go-pkgs/os"
 )
 
 func hasHelmBinary(executor os.OsExecutor) error {

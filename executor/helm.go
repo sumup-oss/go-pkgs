@@ -18,7 +18,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/sumup/go-pkgs/os"
+	"github.com/sumup-oss/go-pkgs/os"
 )
 
 type Helm struct {

@@ -23,7 +23,7 @@ import (
 
 	"github.com/palantir/stacktrace"
 
-	"github.com/sumup/go-pkgs/os"
+	"github.com/sumup-oss/go-pkgs/os"
 )
 
 var (

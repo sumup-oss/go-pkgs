@@ -21,7 +21,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/sumup/go-pkgs/task"
+	"github.com/sumup-oss/go-pkgs/task"
 )
 
 func TestIsRetryableError(t *testing.T) {

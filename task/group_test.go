@@ -19,7 +19,7 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/sumup/go-pkgs/task"
+	"github.com/sumup-oss/go-pkgs/task"
 )
 
 type TestTask struct {
