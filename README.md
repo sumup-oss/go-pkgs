@@ -1,5 +1,7 @@
 # go-pkgs
 
+[![Build Status](https://travis-ci.org/sumup-oss/go-pkgs.svg?branch=master)](https://travis-ci.org/sumup-oss/go-pkgs)
+
 Generic and easy to use packages for common functionality.
 
 ## Goal
