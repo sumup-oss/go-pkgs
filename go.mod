@@ -1,4 +1,4 @@
-module github.com/sumup/go-pkgs
+module github.com/sumup-oss/go-pkgs
 
 require (
 	github.com/inconshreveable/mousetrap v1.0.0 // indirect
