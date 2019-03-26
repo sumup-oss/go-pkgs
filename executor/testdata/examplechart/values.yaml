@@ -1,0 +1,46 @@
+# Applications name and namespace.
+name: dashboard-backend
+namespace: default
+
+# This is the Dashboard Docker image Theseus publishes.
+Image:
+  repository: localhost:5000 # TODO: change this to a shared registry
+  name: dashboard-backend
+  tag: "1.0.0"
+  pullPolicy: Always
+
+# Base image used to build the backend's Docker image.
+BaseImage:
+  repository: localhost:5000 # TODO: change this to a shared registry
+  name: node-8_11_1
+  tag: "1.0.0"
+
+# Kubernetes service that the Dashboard runs as.
+service:
+  appport: 8900 # dashboard-backend node application port
+
+# Documentation for NewRelic configuration options can
+# be found here
+# https://docs.newrelic.com/docs/agents/nodejs-agent/installation-configuration/nodejs-agent-configuration#environment
+# We use the values for environment variables in deployment.yaml
+newRelic:
+  enabled: true
+  appName: "dashboard-backend"
+  licenseKey: ""
+  excludedAttributes: "request.headers.cookie,request.headers.authorization,request.headers.proxyAuthorization,request.headers.setCookie*,request.headers.x*,response.headers.cookie,response.headers.authorization,response.headers.proxyAuthorization,response.headers.setCookie*,response.headers.x*"
+
+sumupkeys: "/home/keys"
+rsyslogsocket: "/dev/log"
+
+# These are needed to expand templates via Consul and obtain
+# secrets via Vault. Both happen at container runtime inside
+# the Dashboard container's entrypoint script. Not entirely
+# sure what the nginx image does here. Probably its entrypoint
+# does something similar.
+CONSUL_ADDRESS: "http://consul:8500"
+VAULT_ADDRESS: "http://vault:8200"
+KUBERNETES_AUTH_VAULT_OPERATOR_ADDRESS: "http://kubernetes-auth-vault-operator:9058/"
+
+podAnnotations: {
+  kubernetes-auth-vault-operator-approle-name: ""
+}

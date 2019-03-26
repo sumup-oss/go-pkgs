@@ -1,0 +1,9 @@
+apiVersion: v1
+appVersion: "1.0.0"
+description: dashboard-backend handles API requests for the Dashboard.
+name: dashboard-backend
+version: 1.0.0
+annotations:
+  theseus-publish-ui-ingress: dashboard-backend
+  theseus-publish-ui-label: "Dashboard Backend"
+  theseus-publish-ui-auth: none

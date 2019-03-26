@@ -1,0 +1,64 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: {{ .Values.name }}
+  namespace: {{ .Values.namespace }}
+  labels:
+    app: {{ .Values.name }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.name }}
+        namespace: {{ .Values.namespace }}
+        release: "{{ .Release.Name }}"
+      {{- if .Values.podAnnotations }}
+      annotations:
+{{ toYaml .Values.podAnnotations | indent 8 }}
+      {{- end }}
+    spec:
+      containers:
+      - name: {{ .Values.name }}
+        image: "{{ .Values.Image.repository }}/{{ .Values.Image.name }}:{{ .Values.Image.tag }}"
+        imagePullPolicy: {{ .Values.Image.pullPolicy | quote }}
+        command: ["/usr/local/bin/docker-entrypoint.sh"]
+        env:
+        - name: CONSUL_ADDRESS
+          value: {{ .Values.CONSUL_ADDRESS | quote }}
+        - name: VAULT_ADDRESS
+          value: {{ .Values.VAULT_ADDRESS | quote }}
+        - name: KUBERNETES_AUTH_VAULT_OPERATOR_ADDRESS
+          value: {{ .Values.KUBERNETES_AUTH_VAULT_OPERATOR_ADDRESS | quote }}
+        - name: NEW_RELIC_ENABLED
+          value: {{ .Values.newRelic.enabled | quote }}
+        - name: NEW_RELIC_APP_NAME
+          value: {{ .Values.newRelic.appName | quote }}
+        - name: NEW_RELIC_ATTRIBUTES_EXCLUDE
+          value: {{ .Values.newRelic.excludedAttributes | quote }}
+        ports:
+        - name: appport
+          containerPort: {{ .Values.service.appport }}
+        resources:
+{{ toYaml .Values.resources | indent 10 }}
+        volumeMounts:
+        - name: rsyslog-socket
+          mountPath: {{ .Values.rsyslogsocket | quote }}
+        livenessProbe:
+          httpGet:
+            path: /health-check
+            port: https
+          initialDelaySeconds: 120
+        readinessProbe:
+          httpGet:
+            path: /health-check
+            port: https
+          initialDelaySeconds: 30
+      volumes:
+      - name: rsyslog-socket
+        hostPath:
+          path:  {{ .Values.rsyslogsocket | quote }}
+          type: Socket
