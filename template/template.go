@@ -35,3 +35,21 @@ func MustParseTemplate(name, content string) *template.Template {
 		Parse(content)
 	return template.Must(t, err)
 }
+
+func MustParseTemplateWithFuncs(name string, funcs template.FuncMap, content string) *template.Template {
+	funcMap := template.FuncMap{}
+	for k, v := range FuncMap {
+		funcMap[k] = v
+	}
+
+	for k, v := range funcs {
+		funcMap[k] = v
+	}
+
+	t, err := template.
+		New(name).
+		Funcs(funcMap).
+		Option("missingkey=error").
+		Parse(content)
+	return template.Must(t, err)
+}
