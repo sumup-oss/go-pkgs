@@ -38,21 +38,26 @@ import (
 )
 
 const (
-	DockerTestContainerName   = "beacon_test_container"
-	DockerImage               = "winlu/docker-git-server"
-	DefaultExposedGitPort     = 2222
-	DefaultExposedGitBindHost = "127.0.0.1"
+	DockerTestContainerName    = "beacon_test_container"
+	DockerImage                = "winlu/docker-git-server"
+	DefaultExposedGitPort      = 2222
+	DefaultExposedGitBindHost  = "127.0.0.1"
+	DefaultGitDockerDaemonHost = "unix:///var/run/docker.sock"
 )
 
 type FakeGitServer struct {
-	Host string
-	Port int
+	Host      string
+	Port      int
+	dockerEnv []string
 }
 
-func NewFakeGitServer(host string, port int) *FakeGitServer {
+func NewFakeGitServer(host string, port int, dockerDaemonHost string) *FakeGitServer {
+	dockerEnv := []string{fmt.Sprintf("DOCKER_HOST=%s", dockerDaemonHost)}
+
 	return &FakeGitServer{
-		Host: host,
-		Port: port,
+		Host:      host,
+		Port:      port,
+		dockerEnv: dockerEnv,
 	}
 }
 
@@ -75,11 +80,20 @@ func NewFakeGitServerFromEnv() *FakeGitServer {
 		gitPortInt = int(gitPortParsed)
 	}
 
-	return NewFakeGitServer(gitHost, gitPortInt)
+	dockerDaemonHost := os.Getenv("TEST_GIT_DOCKER_HOST")
+	if dockerDaemonHost == "" {
+		dockerDaemonHost = DefaultGitDockerDaemonHost
+	}
+
+	return NewFakeGitServer(gitHost, gitPortInt, dockerDaemonHost)
 }
 
 func DefaultGitServer() *FakeGitServer {
-	return NewFakeGitServer(DefaultExposedGitBindHost, DefaultExposedGitPort)
+	return NewFakeGitServer(
+		DefaultExposedGitBindHost,
+		DefaultExposedGitPort,
+		DefaultGitDockerDaemonHost,
+	)
 }
 
 func (s *FakeGitServer) PrepareGitEnv(privKeyPath, username, repositoryName, gitWorkDir string) map[string]string {
@@ -127,6 +141,7 @@ func (s *FakeGitServer) AddRemoteGitUser(username string, privKey *rsa.PrivateKe
 	cmd := exec.Command("docker", args...)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
+	cmd.Env = s.dockerEnv
 	// NOTE: docker exec requires a pty (or at least something that behaves like such).
 	err = cmd.Start()
 	if err != nil {
@@ -388,6 +403,7 @@ func (s *FakeGitServer) PrepareGitServerWithArgs() error {
 	)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
+	cmd.Env = s.dockerEnv
 	err := cmd.Run()
 	if err != nil {
 		return err
@@ -419,6 +435,7 @@ func (s *FakeGitServer) StopGitServer() error {
 	cmd := exec.Command("docker", "rm", "-fv", DockerTestContainerName)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
+	cmd.Env = s.dockerEnv
 	return cmd.Run()
 }
 
