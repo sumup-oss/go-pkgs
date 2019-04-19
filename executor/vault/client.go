@@ -50,6 +50,10 @@ func NewClient(logger logger.Logger, vaultClient VaultClient, privateKey *stdRsa
 	}
 }
 
+func (c *Client) PrivateKey() *stdRsa.PrivateKey {
+	return c.privateKey
+}
+
 // Write writes `data` to `path` and handles both V1 and V2 KV secret API of Vault.
 func (c *Client) Write(path string, data map[string]interface{}) (*api.Secret, error) {
 	mountPath, v2, err := c.isKVv2(path)
