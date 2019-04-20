@@ -6,6 +6,8 @@ import (
 	"strings"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	corev1 "k8s.io/client-go/kubernetes/typed/core/v1"
+
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
@@ -118,4 +120,8 @@ func (c *ClientSet) GetJWT() (string, error) {
 	}
 
 	return string(token), nil
+}
+
+func (c *ClientSet) CoreV1() corev1.CoreV1Interface {
+	return c.clientSet.CoreV1()
 }
