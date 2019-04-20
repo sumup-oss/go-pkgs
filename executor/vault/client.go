@@ -54,6 +54,10 @@ func (c *Client) PrivateKey() *stdRsa.PrivateKey {
 	return c.privateKey
 }
 
+func (c *Client) SetToken(v string) {
+	c.SetToken(v)
+}
+
 // Write writes `data` to `path` and handles both V1 and V2 KV secret API of Vault.
 func (c *Client) Write(path string, data map[string]interface{}) (*api.Secret, error) {
 	mountPath, v2, err := c.isKVv2(path)

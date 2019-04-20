@@ -20,6 +20,7 @@ import (
 
 type VaultClient interface {
 	Logical() *api.Logical
+	SetToken(v string)
 	CurrentWrappingLookupFunc() api.WrappingLookupFunc
 	SetWrappingLookupFunc(lookupFunc api.WrappingLookupFunc)
 	NewRequest(method, requestPath string) *api.Request
