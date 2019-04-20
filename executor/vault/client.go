@@ -55,7 +55,7 @@ func (c *Client) PrivateKey() *stdRsa.PrivateKey {
 }
 
 func (c *Client) SetToken(v string) {
-	c.SetToken(v)
+	c.vaultClient.SetToken(v)
 }
 
 // Write writes `data` to `path` and handles both V1 and V2 KV secret API of Vault.
