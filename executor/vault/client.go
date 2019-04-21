@@ -58,6 +58,15 @@ func (c *Client) SetToken(v string) {
 	c.vaultClient.SetToken(v)
 }
 
+// RawWrite writes `data` to `path` and DOES NOT handle both V1 and V2 KV secret API of Vault. It just writes.
+func (c *Client) RawWrite(path string, data map[string]interface{}) (*api.Secret, error) {
+	secret, err := c.vaultClient.Logical().Write(path, data)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "error writing to Vault path: %s", path)
+	}
+	return secret, err
+}
+
 // Write writes `data` to `path` and handles both V1 and V2 KV secret API of Vault.
 func (c *Client) Write(path string, data map[string]interface{}) (*api.Secret, error) {
 	mountPath, v2, err := c.isKVv2(path)
@@ -78,11 +87,7 @@ func (c *Client) Write(path string, data map[string]interface{}) (*api.Secret, e
 		}
 	}
 
-	secret, err := c.vaultClient.Logical().Write(path, data)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "error writing to Vault path: %s", path)
-	}
-	return secret, err
+	return c.RawWrite(path, data)
 }
 
 // Write deletes secret at `path` and handles both V1 and V2 KV secret API of Vault.
