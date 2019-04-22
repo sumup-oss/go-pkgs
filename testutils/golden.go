@@ -15,26 +15,55 @@
 package testutils
 
 import (
+	"fmt"
+	"io/ioutil"
 	"os"
+	"regexp"
 	"testing"
 
-	"github.com/sebdah/goldie"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
-func Assert(t *testing.T, name string, actualData []byte) {
+func AssertGolden(t *testing.T, path string, actual []byte) {
+	t.Helper()
+
+	// nolint:goconst
 	if os.Getenv("UPDATE_GOLDEN") == "on" {
-		err := goldie.Update(name, actualData)
-		if err != nil {
-			t.Fatalf("failed to update goldie name with actual data. Err: %s", err)
-		}
+		err := ioutil.WriteFile(path, actual, 0644)
+		require.Nil(t, err)
 	}
 
-	goldie.Assert(t, name, actualData)
+	expected, err := ioutil.ReadFile(path)
+	require.Nil(t, err)
+
+	assert.Equal(t, string(expected), string(actual))
 }
 
-// NOTE: Due to how `goldie` works, init is a must-have to override it.
-//nolint:gochecknoinits
-func init() {
-	goldie.FixtureDir = "testdata"
-	goldie.FlagName = "update-golden"
+func AssertGoldenTemplate(t *testing.T, path string, templateVars map[string]string, actual []byte) {
+	t.Helper()
+
+	if os.Getenv("UPDATE_GOLDEN") == "on" {
+		templateContent := actual
+		for k, v := range templateVars {
+			re := regexp.MustCompile(fmt.Sprintf("(?m)%s", regexp.QuoteMeta(v)))
+			templateContent = re.ReplaceAll(
+				templateContent,
+				[]byte(fmt.Sprintf("__GOLDENVAR_%s", k)),
+			)
+		}
+
+		err := ioutil.WriteFile(path, templateContent, 0644)
+		require.Nil(t, err)
+	}
+
+	expected, err := ioutil.ReadFile(path)
+	require.Nil(t, err)
+
+	for k, v := range templateVars {
+		re := regexp.MustCompile("(?m)" + regexp.QuoteMeta(fmt.Sprintf("__GOLDENVAR_%s", k)))
+		expected = re.ReplaceAll(expected, []byte(v))
+	}
+
+	assert.Equal(t, string(expected), string(actual))
 }
