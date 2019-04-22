@@ -38,26 +38,33 @@ import (
 )
 
 const (
-	DockerTestContainerName    = "beacon_test_container"
-	DockerImage                = "winlu/docker-git-server"
-	DefaultExposedGitPort      = 2222
-	DefaultExposedGitBindHost  = "127.0.0.1"
-	DefaultGitDockerDaemonHost = "unix:///var/run/docker.sock"
+	DefaultFakeGitServerContainerName = "fake_git_server"
+	DockerImage                       = "winlu/docker-git-server"
+	DefaultExposedGitPort             = 2222
+	DefaultExposedGitBindHost         = "127.0.0.1"
+	DefaultGitDockerDaemonHost        = "unix:///var/run/docker.sock"
 )
 
 type FakeGitServer struct {
-	Host      string
-	Port      int
-	dockerEnv []string
+	Host                string
+	Port                int
+	dockerContainerName string
+	dockerEnv           []string
 }
 
-func NewFakeGitServer(host string, port int, dockerDaemonHost string) *FakeGitServer {
+func NewFakeGitServer(
+	host string,
+	port int,
+	dockerContainerName string,
+	dockerDaemonHost string,
+) *FakeGitServer {
 	dockerEnv := []string{fmt.Sprintf("DOCKER_HOST=%s", dockerDaemonHost)}
 
 	return &FakeGitServer{
-		Host:      host,
-		Port:      port,
-		dockerEnv: dockerEnv,
+		Host:                host,
+		Port:                port,
+		dockerContainerName: dockerContainerName,
+		dockerEnv:           dockerEnv,
 	}
 }
 
@@ -85,13 +92,19 @@ func NewFakeGitServerFromEnv() *FakeGitServer {
 		dockerDaemonHost = DefaultGitDockerDaemonHost
 	}
 
-	return NewFakeGitServer(gitHost, gitPortInt, dockerDaemonHost)
+	dockerContainerName := os.Getenv("TEST_GIT_DOCKER_CONTAINER_NAME")
+	if dockerContainerName == "" {
+		dockerContainerName = DefaultFakeGitServerContainerName
+	}
+
+	return NewFakeGitServer(gitHost, gitPortInt, dockerContainerName, dockerDaemonHost)
 }
 
 func DefaultGitServer() *FakeGitServer {
 	return NewFakeGitServer(
 		DefaultExposedGitBindHost,
 		DefaultExposedGitPort,
+		DefaultFakeGitServerContainerName,
 		DefaultGitDockerDaemonHost,
 	)
 }
@@ -132,7 +145,7 @@ func (s *FakeGitServer) AddRemoteGitUser(username string, privKey *rsa.PrivateKe
 	authorizedKey := ssh.MarshalAuthorizedKey(pub)
 	args := []string{
 		"exec",
-		DockerTestContainerName,
+		s.dockerContainerName,
 		"sh",
 		"add_git_user.sh",
 		username,
@@ -395,7 +408,7 @@ func (s *FakeGitServer) PrepareGitServerWithArgs() error {
 	cmd := exec.Command("docker", "run",
 		"-p",
 		fmt.Sprintf("%s:%d:22/tcp", s.Host, s.Port),
-		fmt.Sprintf("--name=%s", DockerTestContainerName),
+		fmt.Sprintf("--name=%s", s.dockerContainerName),
 		"-d",
 		"--rm",
 		"-ti",
@@ -432,7 +445,7 @@ func (s *FakeGitServer) PrepareGitServerWithArgs() error {
 
 func (s *FakeGitServer) StopGitServer() error {
 	// NOTE: Ignore error since we clean optimistically
-	cmd := exec.Command("docker", "rm", "-fv", DockerTestContainerName)
+	cmd := exec.Command("docker", "rm", "-fv", s.dockerContainerName)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	cmd.Env = s.dockerEnv
