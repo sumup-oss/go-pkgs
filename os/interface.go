@@ -38,14 +38,7 @@ type OsExecutor interface {
 	ExpandTilde(path string) (string, error)
 	Getenv(key string) string
 	GetOS() string
-	ExecuteWithStreams(
-		cmd string,
-		arg []string,
-		env []string,
-		dir string,
-		stdout io.Writer,
-		stderr io.Writer,
-	) error
+	ExecuteWithStreams(cmd string, arg, env []string, dir string, stdout, stderr io.Writer) error
 	ResolvePath(path string) (string, error)
 	Remove(path string) error
 	RemoveAll(path string) error
@@ -53,11 +46,13 @@ type OsExecutor interface {
 	Create(name string) (*os.File, error)
 	IsDir(path string) error
 	IsFile(path string) error
+	TempDir(dir, prefix string) (string, error)
+	TempFile(dir, pattern string) (*os.File, error)
 	CommandExecutor
 }
 
 type CommandExecutor interface {
-	Execute(cmd string, arg []string, env []string, dir string) ([]byte, []byte, error)
+	Execute(cmd string, arg, env []string, dir string) ([]byte, []byte, error)
 }
 
 type EnvProvider interface {

@@ -243,3 +243,19 @@ func (f *FakeOsExecutor) RemoveAll(path string) error {
 	args := f.Called(path)
 	return args.Error(0)
 }
+
+func (f *FakeOsExecutor) TempDir(dir, prefix string) (string, error) {
+	args := f.Called(dir, prefix)
+	return args.String(0), args.Error(1)
+}
+
+func (f *FakeOsExecutor) TempFile(dir, pattern string) (*stdOs.File, error) {
+	args := f.Called(dir, pattern)
+	returnValue := args.Get(0)
+	err := args.Error(1)
+	if returnValue == nil {
+		return nil, err
+	}
+
+	return returnValue.(*stdOs.File), err
+}

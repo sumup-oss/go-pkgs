@@ -36,7 +36,7 @@ func NewHelm(executor os.CommandExecutor) *Helm {
 }
 
 // GetManifest returns content of a "helm template" substituted manifest.
-func (helm *Helm) GetManifest(
+func (h *Helm) GetManifest(
 	location string,
 	name string,
 	namespace string,
@@ -48,7 +48,7 @@ func (helm *Helm) GetManifest(
 		"--name",
 		name,
 		"--kube-version",
-		helm.kubeVersion,
+		h.kubeVersion,
 		"--namespace",
 		namespace,
 	}
@@ -56,21 +56,21 @@ func (helm *Helm) GetManifest(
 	for key, value := range values {
 		cmdArgs = append(
 			cmdArgs,
-			helm.prepareCommandArgument(key, value, false)...,
+			h.prepareSetArgument(key, value, false)...,
 		)
 	}
 
 	for key, value := range stringValues {
 		cmdArgs = append(
 			cmdArgs,
-			helm.prepareCommandArgument(key, value, true)...,
+			h.prepareSetArgument(key, value, true)...,
 		)
 	}
 
 	cmdArgs = append(cmdArgs, location)
 
-	stdout, stderr, err := helm.commandExecutor.Execute(
-		helm.binPath,
+	stdout, stderr, err := h.commandExecutor.Execute(
+		h.binPath,
 		cmdArgs,
 		nil,
 		"",
@@ -82,7 +82,7 @@ func (helm *Helm) GetManifest(
 	return string(stdout), nil
 }
 
-func (helm *Helm) prepareCommandArgument(key, value string, isString bool) []string {
+func (h *Helm) prepareSetArgument(key, value string, isString bool) []string {
 	// HACK: Workaround strict, yet wrong parsing behavior of Helm parser.
 	// ref: https://github.com/helm/helm/issues/1556
 	// ref: https://github.com/helm/helm/issues/4406
@@ -99,4 +99,13 @@ func (helm *Helm) prepareCommandArgument(key, value string, isString bool) []str
 		setCommand,
 		fmt.Sprintf("%s=%s", key, value),
 	}
+}
+
+func (h *Helm) Package(dir string) (string, error) {
+	stdout, stderr, err := h.commandExecutor.Execute(h.binPath, []string{"package", dir}, nil, "")
+	if err != nil {
+		return "", fmt.Errorf("%s. STDERR: %s", err, stderr)
+	}
+
+	return string(stdout), nil
 }

@@ -686,3 +686,65 @@ func TestRealOsExecutor_RemoveAll(t *testing.T) {
 		assert.Equal(t, calledPathArgument, pathArgument)
 	})
 }
+
+func TestRealOsExecutor_TempDir(t *testing.T) {
+	t.Run("it uses builtin `ioutilTempDir`", func(t *testing.T) {
+		called := false
+		var calledDir string
+		var calledPrefix string
+		var fakeString string
+		var fakeErr error
+
+		ioutilTempDir = func(dir, prefix string) (string, error) {
+			called = true
+			calledDir = dir
+			calledPrefix = prefix
+			return fakeString, fakeErr
+		}
+
+		osExecutor := &RealOsExecutor{}
+
+		dirArg := "/tmp/example"
+		prefixArg := "pattern"
+
+		actualReturn, actualErr := osExecutor.TempDir(dirArg, prefixArg)
+		require.True(t, called)
+
+		assert.Equal(t, calledDir, dirArg)
+		assert.Equal(t, calledPrefix, prefixArg)
+
+		assert.Equal(t, fakeString, actualReturn)
+		assert.Equal(t, fakeErr, actualErr)
+	})
+}
+
+func TestRealOsExecutor_TempFile(t *testing.T) {
+	t.Run("it uses builtin `ioutilTempFile`", func(t *testing.T) {
+		called := false
+		var calledDir string
+		var calledPattern string
+		var fakeFile *os.File
+		var fakeErr error
+
+		ioutilTempFile = func(dir, pattern string) (*os.File, error) {
+			called = true
+			calledDir = dir
+			calledPattern = pattern
+			return fakeFile, fakeErr
+		}
+
+		osExecutor := &RealOsExecutor{}
+
+		dirArg := "/tmp/example"
+		patternArg := "pattern"
+
+		actualReturn, actualErr := osExecutor.TempFile(dirArg, patternArg)
+		require.True(t, called)
+
+		assert.Equal(t, calledDir, dirArg)
+		assert.Equal(t, calledPattern, patternArg)
+
+		assert.Equal(t, fakeFile, actualReturn)
+		assert.Equal(t, fakeErr, actualErr)
+	})
+}

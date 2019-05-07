@@ -46,3 +46,5 @@ var osRemoveAll = os.RemoveAll
 var userCurrent = user.Current
 var osCreate = os.Create
 var ioutilReadFile = ioutil.ReadFile
+var ioutilTempDir = ioutil.TempDir
+var ioutilTempFile = ioutil.TempFile
