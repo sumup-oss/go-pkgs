@@ -200,3 +200,11 @@ func (ex *RealOsExecutor) IsFile(path string) error {
 func (ex *RealOsExecutor) RemoveAll(path string) error {
 	return osRemoveAll(path)
 }
+
+func (ex *RealOsExecutor) TempDir(dir, prefix string) (name string, err error) {
+	return ioutilTempDir(dir, prefix)
+}
+
+func (ex *RealOsExecutor) TempFile(dir, pattern string) (f *os.File, err error) {
+	return ioutilTempFile(dir, pattern)
+}

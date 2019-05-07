@@ -15,6 +15,8 @@
 package executor
 
 import (
+	"errors"
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -204,6 +206,61 @@ func TestHelm_GetManifest(t *testing.T) {
 
 			require.Nil(t, actualErr)
 			assert.Equal(t, string(fakeStdout), actual)
+		},
+	)
+}
+
+func TestHelm_Package(t *testing.T) {
+	dirArg := "/tmp/example"
+
+	t.Run(
+		"when no error occurs, it returns stdout of packaged dir",
+		func(t *testing.T) {
+			t.Parallel()
+
+			osExecutor := ostest.NewFakeOsExecutor(t)
+
+			helmInstance := NewHelm(osExecutor)
+
+			fakeStdout := []byte("fakeStdout")
+			osExecutor.On(
+				"Execute",
+				helmInstance.binPath,
+				[]string{"package", dirArg},
+				[]string(nil),
+				"",
+			).Return(fakeStdout, nil, nil)
+
+			actualReturn, actualErr := helmInstance.Package(dirArg)
+			assert.Equal(t, string(fakeStdout), actualReturn)
+			assert.Nil(t, actualErr)
+		},
+	)
+
+	t.Run(
+		"when error occurs, it returns stderr of executed command as part of error",
+		func(t *testing.T) {
+			t.Parallel()
+
+			osExecutor := ostest.NewFakeOsExecutor(t)
+
+			helmInstance := NewHelm(osExecutor)
+
+			fakeStdout := []byte("fakeStdout")
+			fakeStderr := []byte("fakeStderr")
+			fakeErr := errors.New("fakeErr")
+
+			osExecutor.On(
+				"Execute",
+				helmInstance.binPath,
+				[]string{"package", dirArg},
+				[]string(nil),
+				"",
+			).Return(fakeStdout, fakeStderr, fakeErr)
+
+			actualReturn, actualErr := helmInstance.Package(dirArg)
+			assert.Equal(t, "", actualReturn)
+			assert.Equal(t, fmt.Sprintf("%s. STDERR: %s", fakeErr, fakeStderr), actualErr.Error())
 		},
 	)
 }
