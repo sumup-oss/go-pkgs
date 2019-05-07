@@ -208,3 +208,7 @@ func (ex *RealOsExecutor) TempDir(dir, prefix string) (name string, err error) {
 func (ex *RealOsExecutor) TempFile(dir, pattern string) (f *os.File, err error) {
 	return ioutilTempFile(dir, pattern)
 }
+
+func (ex *RealOsExecutor) ReadDir(dirname string) ([]os.FileInfo, error) {
+	return ioutilReadDir(dirname)
+}
