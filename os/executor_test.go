@@ -748,3 +748,30 @@ func TestRealOsExecutor_TempFile(t *testing.T) {
 		assert.Equal(t, fakeErr, actualErr)
 	})
 }
+
+func TestRealOsExecutor_ReadDir(t *testing.T) {
+	t.Run("it uses builtin `ioutilReadDir`", func(t *testing.T) {
+		called := false
+		var calledDirname string
+		var fakeInfos []os.FileInfo
+		var fakeErr error
+
+		ioutilReadDir = func(dirname string) ([]os.FileInfo, error) {
+			called = true
+			calledDirname = dirname
+			return fakeInfos, fakeErr
+		}
+
+		osExecutor := &RealOsExecutor{}
+
+		dirnameArg := "/tmp/example"
+
+		actualReturn, actualErr := osExecutor.ReadDir(dirnameArg)
+		require.True(t, called)
+
+		assert.Equal(t, calledDirname, dirnameArg)
+
+		assert.Equal(t, fakeInfos, actualReturn)
+		assert.Equal(t, fakeErr, actualErr)
+	})
+}

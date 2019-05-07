@@ -259,3 +259,14 @@ func (f *FakeOsExecutor) TempFile(dir, pattern string) (*stdOs.File, error) {
 
 	return returnValue.(*stdOs.File), err
 }
+
+func (f *FakeOsExecutor) ReadDir(dirname string) ([]stdOs.FileInfo, error) {
+	args := f.Called(dirname)
+	returnValue := args.Get(0)
+	err := args.Error(1)
+	if returnValue == nil {
+		return nil, err
+	}
+
+	return returnValue.([]stdOs.FileInfo), err
+}
