@@ -22,34 +22,42 @@ import (
 
 type (
 	OsExecutor interface {
-		Chdir(dir string) error
-		Getwd() (string, error)
-		Mkdir(dirname string, perm os.FileMode) error
-		MkdirAll(dirname string, perm os.FileMode) error
-		Exit(statusCode int)
-		Stderr() io.Writer
-		Stdin() io.Reader
-		Stdout() io.Writer
 		Args() []string
-		Stat(filepath string) (os.FileInfo, error)
-		IsNotExist(err error) bool
-		OpenFile(path string, flag int, perm os.FileMode) (*os.File, error)
-		ReadFile(filename string) ([]byte, error)
-		ReadDir(dirname string) ([]os.FileInfo, error)
-		WriteFile(path string, data []byte, perm os.FileMode) error
+		Chdir(dir string) error
+		Chmod(name string, mode os.FileMode) error
+		CopyDir(src, dst string) error
+		CopyFile(src, dst string) error
+		CopyLink(src, dst string) error
+		Create(name string) (*os.File, error)
+		CurrentUser() (*user.User, error)
+		ExecuteWithStreams(cmd string, arg, env []string, dir string, stdout, stderr io.Writer) error
+		Exit(statusCode int)
 		ExpandTilde(path string) (string, error)
 		Getenv(key string) string
 		GetOS() string
-		ExecuteWithStreams(cmd string, arg, env []string, dir string, stdout, stderr io.Writer) error
-		ResolvePath(path string) (string, error)
-		Remove(path string) error
-		RemoveAll(path string) error
-		CurrentUser() (*user.User, error)
-		Create(name string) (*os.File, error)
+		Getwd() (string, error)
 		IsDir(path string) error
 		IsFile(path string) error
+		IsNotExist(err error) bool
+		Lstat(name string) (os.FileInfo, error)
+		Mkdir(dirname string, perm os.FileMode) error
+		MkdirAll(dirname string, perm os.FileMode) error
+		Open(name string) (*os.File, error)
+		OpenFile(path string, flag int, perm os.FileMode) (*os.File, error)
+		ReadDir(dirname string) ([]os.FileInfo, error)
+		ReadFile(filename string) ([]byte, error)
+		Readlink(name string) (string, error)
+		Remove(path string) error
+		RemoveAll(path string) error
+		ResolvePath(path string) (string, error)
+		Stat(filepath string) (os.FileInfo, error)
+		Stderr() io.Writer
+		Stdin() io.Reader
+		Stdout() io.Writer
+		Symlink(oldname, newname string) error
 		TempDir(dir, prefix string) (string, error)
 		TempFile(dir, pattern string) (*os.File, error)
+		WriteFile(path string, data []byte, perm os.FileMode) error
 		CommandExecutor
 	}
 	CommandExecutor interface {

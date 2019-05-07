@@ -270,3 +270,55 @@ func (f *FakeOsExecutor) ReadDir(dirname string) ([]stdOs.FileInfo, error) {
 
 	return returnValue.([]stdOs.FileInfo), err
 }
+
+func (f *FakeOsExecutor) Chmod(name string, mode stdOs.FileMode) error {
+	args := f.Called(name, mode)
+	return args.Error(0)
+}
+
+func (f *FakeOsExecutor) CopyDir(src, dst string) error {
+	args := f.Called(src, dst)
+	return args.Error(0)
+}
+
+func (f *FakeOsExecutor) CopyFile(src, dst string) error {
+	args := f.Called(src, dst)
+	return args.Error(0)
+}
+
+func (f *FakeOsExecutor) CopyLink(src, dst string) error {
+	args := f.Called(src, dst)
+	return args.Error(0)
+}
+
+func (f *FakeOsExecutor) Open(name string) (*stdOs.File, error) {
+	args := f.Called(name)
+	returnValue := args.Get(0)
+	err := args.Error(1)
+	if returnValue == nil {
+		return nil, err
+	}
+
+	return returnValue.(*stdOs.File), err
+}
+
+func (f *FakeOsExecutor) Readlink(name string) (string, error) {
+	args := f.Called(name)
+	return args.String(0), args.Error(1)
+}
+
+func (f *FakeOsExecutor) Symlink(oldname, newname string) error {
+	args := f.Called(oldname, newname)
+	return args.Error(0)
+}
+
+func (f *FakeOsExecutor) Lstat(name string) (stdOs.FileInfo, error) {
+	args := f.Called(name)
+	returnValue := args.Get(0)
+	err := args.Error(1)
+	if returnValue == nil {
+		return nil, err
+	}
+
+	return returnValue.(stdOs.FileInfo), err
+}
