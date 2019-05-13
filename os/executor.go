@@ -212,3 +212,118 @@ func (ex *RealOsExecutor) TempFile(dir, pattern string) (f *os.File, err error) 
 func (ex *RealOsExecutor) ReadDir(dirname string) ([]os.FileInfo, error) {
 	return ioutilReadDir(dirname)
 }
+
+func (ex *RealOsExecutor) Open(name string) (*os.File, error) {
+	return osOpen(name)
+}
+
+func (ex *RealOsExecutor) Chmod(name string, mode os.FileMode) error {
+	return osChmod(name, mode)
+}
+
+func (ex *RealOsExecutor) Readlink(name string) (string, error) {
+	return osReadlink(name)
+}
+
+func (ex *RealOsExecutor) Symlink(oldname, newname string) error {
+	return osSymlink(oldname, newname)
+}
+
+func (ex *RealOsExecutor) Lstat(name string) (os.FileInfo, error) {
+	return osLstat(name)
+}
+
+func (ex *RealOsExecutor) CopyFile(src, dst string) error {
+	srcfd, err := ex.Open(src)
+	if err != nil {
+		return stacktrace.Propagate(err, "failed to open file: %s", src)
+	}
+	defer srcfd.Close()
+
+	fileInfo, err := ex.Lstat(src)
+	if err != nil {
+		return stacktrace.Propagate(err, "failed to stat file: %s", src)
+	}
+
+	// NOTE: Golang does not have a `IsSymlink` check
+	if fileInfo.Mode()&os.ModeSymlink != 0 {
+		return ex.CopyLink(src, dst)
+	}
+
+	if !fileInfo.Mode().IsRegular() {
+		return stacktrace.Propagate(err, "not a file: %s", src)
+	}
+
+	dstfd, err := ex.Create(dst)
+	if err != nil {
+		return stacktrace.Propagate(err, "failed to create file: %s", dst)
+	}
+	defer dstfd.Close()
+
+	_, err = io.Copy(dstfd, srcfd)
+	if err != nil {
+		return stacktrace.Propagate(err, "failed to copy file contents from %s to %s", src, dst)
+	}
+
+	err = ex.Chmod(dst, fileInfo.Mode())
+	return stacktrace.Propagate(err, "failed to change file permissions, path %s", dst)
+}
+
+func (ex *RealOsExecutor) CopyLink(src, dst string) error {
+	srcPath, err := ex.Readlink(src)
+	if err != nil {
+		return stacktrace.Propagate(err, "failed to readlink from src")
+	}
+
+	return ex.Symlink(srcPath, dst)
+}
+
+func (ex *RealOsExecutor) CopyDir(src, dst string) error {
+	srcStat, err := ex.Stat(src)
+	if err != nil {
+		return stacktrace.Propagate(err, "failed to stat file: %s", src)
+	}
+	if !srcStat.IsDir() {
+		return stacktrace.Propagate(err, "not a directory: %s", src)
+	}
+
+	err = ex.MkdirAll(dst, srcStat.Mode())
+	if err != nil {
+		return stacktrace.Propagate(err, "failed to create dirs to path: %s", dst)
+	}
+
+	fds, err := ex.ReadDir(src)
+	if err != nil {
+		return stacktrace.Propagate(err, "failed to read dir contents at path: %s", src)
+	}
+
+	for _, fd := range fds {
+		srcPath := filepath.Join(src, fd.Name())
+		dstPath := filepath.Join(dst, fd.Name())
+
+		if fd.IsDir() {
+			err = ex.CopyDir(srcPath, dstPath)
+			if err != nil {
+				return stacktrace.Propagate(
+					err,
+					"failed to copy dir from %s to %s",
+					srcPath,
+					dstPath,
+				)
+			}
+		} else {
+			err = ex.CopyFile(srcPath, dstPath)
+			if err != nil {
+				return stacktrace.Propagate(
+					err,
+					"failed to copy file from %s to %s",
+					srcPath,
+					dstPath,
+				)
+			}
+		}
+
+	}
+
+	return nil
+}

@@ -150,3 +150,95 @@ func TestRealOsExecutor_IsDir(t *testing.T) {
 		},
 	)
 }
+
+func TestRealOsExecutor_CopyFile(t *testing.T) {
+	t.Run(
+		"when src file is not existing, it fails and return error",
+		func(t *testing.T) {
+			t.Parallel()
+
+			osExecutor := &RealOsExecutor{}
+
+			srcArg := "/tmp/NOTexistingEXAmpleCopyFile"
+			err := osExecutor.CopyFile(srcArg, "/tmp/example1234Notexisting")
+			require.Error(t, err, "failed to open file: %s", srcArg)
+		},
+	)
+
+	t.Run(
+		"when src file is existing, but dst is also existing, it overwrites the dst and writes src",
+		func(t *testing.T) {
+			t.Parallel()
+
+			osExecutor := &RealOsExecutor{}
+
+			srcFd, err := osExecutor.TempFile("", "")
+			require.Nil(t, err, "failed to create temporary file")
+
+			srcArg := srcFd.Name()
+			err = osExecutor.WriteFile(srcArg, []byte("SRC_EXAMPLE"), 0755)
+			require.Nil(t, err, "failed to write temporary file")
+
+			dstFd, err := osExecutor.TempFile("", "")
+			require.Nil(t, err, "failed to create temporary file")
+
+			dstArg := dstFd.Name()
+			err = osExecutor.WriteFile(dstArg, []byte("DST_EXAMPLE"), 0755)
+			require.Nil(t, err, "failed to write temporary file")
+
+
+			err = osExecutor.CopyFile(srcArg, dstArg)
+			assert.Nil(t, err)
+
+			dstContents, err := osExecutor.ReadFile(dstArg)
+			require.Nil(t, err)
+			assert.Equal(t, "SRC_EXAMPLE", string(dstContents))
+		},
+	)
+}
+
+func TestRealOsExecutor_CopyDir(t *testing.T) {
+	t.Run(
+		"when src dir is not existing, it fails and return error",
+		func(t *testing.T) {
+			t.Parallel()
+
+			osExecutor := &RealOsExecutor{}
+
+			srcArg := "/tmp/notExistingDir1TestOsExecutor"
+			err := osExecutor.CopyDir(srcArg, "/tmp/example1234Notexisting")
+			require.Error(t, err, "failed to stat file: %s", srcArg)
+		},
+	)
+
+	t.Run(
+		"when src dir is existing, but dst is also existing, it overwrites the dst and writes src",
+		func(t *testing.T) {
+			t.Parallel()
+
+			osExecutor := &RealOsExecutor{}
+
+			srcArg, err := osExecutor.TempDir("", "")
+			require.Nil(t, err, "failed to create temporary dir")
+
+			srcExampleFile := filepath.Join(srcArg, "example.txt")
+			err = osExecutor.WriteFile(srcExampleFile, []byte("SRC_EXAMPLE"), 0755)
+			require.Nil(t, err, "failed to write temporary file")
+
+			dstArg, err := osExecutor.TempDir("", "")
+			require.Nil(t, err, "failed to create temporary dir")
+
+			dstExampleFile := filepath.Join(dstArg, "example.txt")
+			err = osExecutor.WriteFile(dstExampleFile, []byte("DST_EXAMPLE"), 0755)
+			require.Nil(t, err, "failed to write temporary file")
+
+
+			err = osExecutor.CopyDir(srcArg, dstArg)
+			assert.Nil(t, err)
+
+			dstContents, err := osExecutor.ReadFile(dstExampleFile)
+			require.Nil(t, err)
+			assert.Equal(t, "SRC_EXAMPLE", string(dstContents))
+		},
+	)
+}
