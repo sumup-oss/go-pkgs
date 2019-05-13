@@ -231,7 +231,7 @@ func TestHelm_Package(t *testing.T) {
 				"",
 			).Return(fakeStdout, nil, nil)
 
-			actualReturn, actualErr := helmInstance.Package(dirArg)
+			actualReturn, actualErr := helmInstance.Package(dirArg, "")
 			assert.Equal(t, string(fakeStdout), actualReturn)
 			assert.Nil(t, actualErr)
 		},
@@ -258,7 +258,7 @@ func TestHelm_Package(t *testing.T) {
 				"",
 			).Return(fakeStdout, fakeStderr, fakeErr)
 
-			actualReturn, actualErr := helmInstance.Package(dirArg)
+			actualReturn, actualErr := helmInstance.Package(dirArg, "")
 			assert.Equal(t, "", actualReturn)
 			assert.Equal(t, fmt.Sprintf("%s. STDERR: %s", fakeErr, fakeStderr), actualErr.Error())
 		},
