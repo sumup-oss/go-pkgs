@@ -101,8 +101,13 @@ func (h *Helm) prepareSetArgument(key, value string, isString bool) []string {
 	}
 }
 
-func (h *Helm) Package(dir string) (string, error) {
-	stdout, stderr, err := h.commandExecutor.Execute(h.binPath, []string{"package", dir}, nil, "")
+func (h *Helm) Package(dir, dest string) (string, error) {
+	args := []string{"package", dir}
+	if dest != "" {
+		args = append(args, "--destination", dest)
+	}
+
+	stdout, stderr, err := h.commandExecutor.Execute(h.binPath, args, nil, "")
 	if err != nil {
 		return "", fmt.Errorf("%s. STDERR: %s", err, stderr)
 	}
