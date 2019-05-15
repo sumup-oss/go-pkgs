@@ -28,13 +28,19 @@ import (
 	"github.com/palantir/stacktrace"
 )
 
-// Compile-time proof of interfaces implementation.
-var _ OsExecutor = (*RealOsExecutor)(nil)
-var _ CommandExecutor = (*RealOsExecutor)(nil)
-var _ EnvProvider = (*RealOsExecutor)(nil)
-var _ IOStreamsProvider = (*RealOsExecutor)(nil)
+var (
+	// Compile-time proof of interfaces implementation.
+	_ OsExecutor        = (*RealOsExecutor)(nil)
+	_ CommandExecutor   = (*RealOsExecutor)(nil)
+	_ EnvProvider       = (*RealOsExecutor)(nil)
+	_ IOStreamsProvider = (*RealOsExecutor)(nil)
+)
 
-type RealOsExecutor struct{}
+type RealOsExecutor struct {
+	stdErr io.Writer
+	stdin  io.Reader
+	stdout io.Writer
+}
 
 func (ex *RealOsExecutor) Chdir(dir string) error {
 	return osChdir(dir)
@@ -57,15 +63,24 @@ func (ex *RealOsExecutor) Exit(statusCode int) {
 }
 
 func (ex *RealOsExecutor) Stderr() io.Writer {
-	return osStderr
+	if ex.stdErr == nil {
+		return osStderr
+	}
+	return ex.stdErr
 }
 
 func (ex *RealOsExecutor) Stdin() io.Reader {
-	return osStdin
+	if ex.stdin == nil {
+		return osStdin
+	}
+	return ex.stdin
 }
 
 func (ex *RealOsExecutor) Stdout() io.Writer {
-	return osStdout
+	if ex.stdout == nil {
+		return osStdout
+	}
+	return ex.stdout
 }
 
 func (ex *RealOsExecutor) Args() []string {
