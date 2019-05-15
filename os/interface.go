@@ -51,8 +51,11 @@ type (
 		RemoveAll(path string) error
 		ResolvePath(path string) (string, error)
 		Stat(filepath string) (os.FileInfo, error)
+		SetStderr(v io.Writer)
 		Stderr() io.Writer
+		SetStdin(v io.Reader)
 		Stdin() io.Reader
+		SetStdout(v io.Writer)
 		Stdout() io.Writer
 		Symlink(oldname, newname string) error
 		TempDir(dir, prefix string) (string, error)

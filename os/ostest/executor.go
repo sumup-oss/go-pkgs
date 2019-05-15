@@ -322,3 +322,15 @@ func (f *FakeOsExecutor) Lstat(name string) (stdOs.FileInfo, error) {
 
 	return returnValue.(stdOs.FileInfo), err
 }
+
+func (f *FakeOsExecutor) SetStderr(v io.Writer) {
+	f.Called(v)
+}
+
+func (f *FakeOsExecutor) SetStdin(v io.Reader) {
+	f.Called(v)
+}
+
+func (f *FakeOsExecutor) SetStdout(v io.Writer) {
+	f.Called(v)
+}
