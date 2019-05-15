@@ -62,6 +62,10 @@ func (ex *RealOsExecutor) Exit(statusCode int) {
 	osExit(statusCode)
 }
 
+func (ex *RealOsExecutor) SetStderr(v io.Writer) {
+	ex.stdErr = v
+}
+
 func (ex *RealOsExecutor) Stderr() io.Writer {
 	if ex.stdErr == nil {
 		return osStderr
@@ -69,11 +73,19 @@ func (ex *RealOsExecutor) Stderr() io.Writer {
 	return ex.stdErr
 }
 
+func (ex *RealOsExecutor) SetStdin(v io.Reader) {
+	ex.stdin = v
+}
+
 func (ex *RealOsExecutor) Stdin() io.Reader {
 	if ex.stdin == nil {
 		return osStdin
 	}
 	return ex.stdin
+}
+
+func (ex *RealOsExecutor) SetStdout(v io.Writer) {
+	ex.stdout = v
 }
 
 func (ex *RealOsExecutor) Stdout() io.Writer {
