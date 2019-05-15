@@ -4,11 +4,6 @@ run:
   # if anything is missing
   modules-download-mode: readonly
 
-cache:
-  directories:
-    - $HOME/.cache/go-build
-    - $HOME/gopath/pkg/mod
-
 output:
   format: colored-line-number
   print-issued-lines: true

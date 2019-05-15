@@ -5,6 +5,10 @@ go:
 os:
   - linux
   - osx
+cache:
+  directories:
+    - $HOME/.cache/go-build
+    - $HOME/gopath/pkg/mod
 env:
   - GO111MODULE=on
 git:
