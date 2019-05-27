@@ -83,16 +83,17 @@ func (h *Helm) GetManifest(
 }
 
 func (h *Helm) prepareSetArgument(key, value string, isString bool) []string {
-	// HACK: Workaround strict, yet wrong parsing behavior of Helm parser.
-	// ref: https://github.com/helm/helm/issues/1556
-	// ref: https://github.com/helm/helm/issues/4406
-	if strings.Contains(value, ",") {
-		value = strings.ReplaceAll(value, ",", "\\,")
-	}
-
 	setCommand := "--set"
+
 	if isString {
 		setCommand = "--set-string"
+
+		// HACK: Workaround strict, yet wrong parsing behavior of Helm parser.
+		// ref: https://github.com/helm/helm/issues/1556
+		// ref: https://github.com/helm/helm/issues/4406
+		if strings.Contains(value, ",") {
+			value = strings.ReplaceAll(value, ",", "\\,")
+		}
 	}
 
 	return []string{
