@@ -242,3 +242,65 @@ func TestRealOsExecutor_CopyDir(t *testing.T) {
 		},
 	)
 }
+
+
+func TestRealOsExecutor_RemoveContents(t *testing.T) {
+	t.Run(
+		"when dir is empty, it does not delete the dir",
+		func(t *testing.T) {
+			t.Parallel()
+
+			osExecutor := &RealOsExecutor{}
+
+			pathArg, err := osExecutor.TempDir("", "")
+			require.Nil(t, err, "failed to create temporary dir")
+
+			err = osExecutor.RemoveContents(pathArg, -1)
+			require.Nil(t, err)
+
+			_, err = osExecutor.Stat(pathArg)
+			require.Nil(t, err)
+		},
+	)
+
+	t.Run(
+		"when dir contains nested files and dirs, it does not delete the dir and deletes all files and" +
+			" dirs inside",
+		func(t *testing.T) {
+			t.Parallel()
+
+			osExecutor := &RealOsExecutor{}
+
+			pathArg, err := osExecutor.TempDir("", "")
+			require.Nil(t, err, "failed to create temporary dir")
+
+			// NOTE: Setup nested dir structure
+			f1Path := filepath.Join(pathArg, "f1")
+			err = osExecutor.WriteFile(f1Path, []byte("1"), 0755)
+			require.Nil(t, err)
+
+			f2Path := filepath.Join(pathArg, "f2")
+			err = osExecutor.WriteFile(f2Path, []byte("2"), 0755)
+			require.Nil(t, err)
+
+			dir1Path := filepath.Join(pathArg, "dir1")
+			err = osExecutor.Mkdir(dir1Path, 0755)
+			require.Nil(t, err)
+
+			nested1Path := filepath.Join(dir1Path, "nested1")
+			err = osExecutor.WriteFile(nested1Path, []byte("n1"), 0755)
+			require.Nil(t, err)
+
+			err = osExecutor.RemoveContents(pathArg, -1)
+			require.Nil(t, err)
+
+			_, err = osExecutor.Stat(pathArg)
+			require.Nil(t, err)
+
+			for _, path := range []string{f1Path, f2Path, dir1Path, nested1Path} {
+				_, err := osExecutor.Stat(path)
+				require.True(t, osExecutor.IsNotExist(err))
+			}
+		},
+	)
+}

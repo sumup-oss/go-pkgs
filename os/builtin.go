@@ -39,6 +39,7 @@ var osCreate = os.Create
 var osExit = os.Exit
 var osGetenv = os.Getenv
 var osGetwd = os.Getwd
+var osIsExist = os.IsExist
 var osIsNotExist = os.IsNotExist
 var osLstat = os.Lstat
 var osMkdir = os.Mkdir

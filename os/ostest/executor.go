@@ -334,3 +334,13 @@ func (f *FakeOsExecutor) SetStdin(v io.Reader) {
 func (f *FakeOsExecutor) SetStdout(v io.Writer) {
 	f.Called(v)
 }
+
+func (f *FakeOsExecutor) RemoveContents(path string, limit int) error {
+	args := f.Called(path, limit)
+	return args.Error(0)
+}
+
+func (f *FakeOsExecutor) IsExist(err error) bool {
+	args := f.Called(err)
+	return args.Bool(0)
+}
