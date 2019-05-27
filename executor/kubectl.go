@@ -15,7 +15,7 @@ import (
 
 type (
 	KubectlInterface interface {
-		Apply(manifest string) error
+		Apply(manifest string, namespace string) error
 		Delete(manifest string) error
 		Create(manifest string) error
 		ClusterInfo() error
@@ -109,8 +109,13 @@ func (k *Kubectl) executeCommand(args []string, env []string) ([]byte, []byte, e
 	return k.commandExecutor.Execute(k.commandString, args, env, "")
 }
 
-func (k *Kubectl) Apply(manifest string) error {
+func (k *Kubectl) Apply(manifest string, namespace string) error {
 	commandArgs := append([]string{"apply"}, "-f", manifest)
+
+	if namespace != "" {
+		commandArgs = append(commandArgs, "-n", namespace)
+	}
+
 	_, _, err := k.executeCommand(commandArgs, nil)
 	return err
 }
@@ -452,7 +457,7 @@ func (k *Kubectl) ApplyConfigmap(name, namespace string, data map[string]string)
 		return err
 	}
 
-	return k.Apply(fd.Name())
+	return k.Apply(fd.Name(), "")
 }
 
 func (k *Kubectl) ApplyService(service *KubernetesService) error {
@@ -481,7 +486,7 @@ func (k *Kubectl) ApplyService(service *KubernetesService) error {
 		return err
 	}
 
-	return k.Apply(fd.Name())
+	return k.Apply(fd.Name(), "")
 }
 
 func (k *Kubectl) RolloutStatus(timeout time.Duration, resource, namespace string) error {
