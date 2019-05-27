@@ -129,7 +129,7 @@ func (ex *RealOsExecutor) GetOS() string {
 
 func (ex *RealOsExecutor) Execute(
 	cmd string,
-	arg []string,
+	arg,
 	env []string,
 	dir string,
 ) ([]byte, []byte, error) {
@@ -141,7 +141,7 @@ func (ex *RealOsExecutor) Execute(
 
 func (ex *RealOsExecutor) ExecuteWithStreams(
 	cmd string,
-	arg []string,
+	arg,
 	env []string,
 	dir string,
 	stdout io.Writer,
@@ -184,6 +184,30 @@ func (ex *RealOsExecutor) ResolvePath(path string) (string, error) {
 
 func (ex *RealOsExecutor) Remove(path string) error {
 	return osRemove(path)
+}
+
+func (ex *RealOsExecutor) RemoveContents(path string, limit int) error {
+	fd, err := ex.Open(path)
+	if err != nil {
+		return err
+	}
+
+	names, err := fd.Readdirnames(limit)
+	if err != nil {
+		return err
+	}
+
+	for _, name := range names {
+		dirPath := filepath.Join(path, name)
+		err = ex.RemoveAll(dirPath)
+		if err == nil {
+			continue
+		}
+
+		return err
+	}
+
+	return nil
 }
 
 func (ex *RealOsExecutor) CurrentUser() (*user.User, error) {
@@ -353,4 +377,8 @@ func (ex *RealOsExecutor) CopyDir(src, dst string) error {
 	}
 
 	return nil
+}
+
+func (ex *RealOsExecutor) IsExist(err error) bool {
+	return osIsExist(err)
 }

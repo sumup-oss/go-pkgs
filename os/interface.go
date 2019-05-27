@@ -37,6 +37,7 @@ type (
 		GetOS() string
 		Getwd() (string, error)
 		IsDir(path string) error
+		IsExist(err error) bool
 		IsFile(path string) error
 		IsNotExist(err error) bool
 		Lstat(name string) (os.FileInfo, error)
@@ -49,13 +50,14 @@ type (
 		Readlink(name string) (string, error)
 		Remove(path string) error
 		RemoveAll(path string) error
+		RemoveContents(path string, limit int) error
 		ResolvePath(path string) (string, error)
-		Stat(filepath string) (os.FileInfo, error)
 		SetStderr(v io.Writer)
-		Stderr() io.Writer
 		SetStdin(v io.Reader)
-		Stdin() io.Reader
 		SetStdout(v io.Writer)
+		Stat(filepath string) (os.FileInfo, error)
+		Stderr() io.Writer
+		Stdin() io.Reader
 		Stdout() io.Writer
 		Symlink(oldname, newname string) error
 		TempDir(dir, prefix string) (string, error)
