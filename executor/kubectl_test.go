@@ -11,7 +11,7 @@ import (
 
 func TestKubectl_RolloutStatus(t *testing.T) {
 	t.Run(
-		"when passing 'timeout' and  'resourceName' argument, " +
+		"when passing 'timeout' and  'resourceName' argument, "+
 			"it calls kubectl execute with provided arguments",
 		func(t *testing.T) {
 			t.Parallel()
@@ -28,7 +28,6 @@ func TestKubectl_RolloutStatus(t *testing.T) {
 			kubectl := NewKubectl(executor, "", "svc.cluster.local").(*Kubectl)
 
 			_ = kubectl.RolloutStatus(time.Second*5, "deployment/foo", "default")
-
 
 			executor.AssertExpectations(t)
 		},

@@ -186,7 +186,6 @@ func TestRealOsExecutor_CopyFile(t *testing.T) {
 			err = osExecutor.WriteFile(dstArg, []byte("DST_EXAMPLE"), 0755)
 			require.Nil(t, err, "failed to write temporary file")
 
-
 			err = osExecutor.CopyFile(srcArg, dstArg)
 			assert.Nil(t, err)
 
@@ -232,7 +231,6 @@ func TestRealOsExecutor_CopyDir(t *testing.T) {
 			err = osExecutor.WriteFile(dstExampleFile, []byte("DST_EXAMPLE"), 0755)
 			require.Nil(t, err, "failed to write temporary file")
 
-
 			err = osExecutor.CopyDir(srcArg, dstArg)
 			assert.Nil(t, err)
 
@@ -242,7 +240,6 @@ func TestRealOsExecutor_CopyDir(t *testing.T) {
 		},
 	)
 }
-
 
 func TestRealOsExecutor_RemoveContents(t *testing.T) {
 	t.Run(
@@ -264,7 +261,7 @@ func TestRealOsExecutor_RemoveContents(t *testing.T) {
 	)
 
 	t.Run(
-		"when dir contains nested files and dirs, it does not delete the dir and deletes all files and" +
+		"when dir contains nested files and dirs, it does not delete the dir and deletes all files and"+
 			" dirs inside",
 		func(t *testing.T) {
 			t.Parallel()
