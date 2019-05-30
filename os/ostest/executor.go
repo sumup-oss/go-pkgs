@@ -344,3 +344,8 @@ func (f *FakeOsExecutor) IsExist(err error) bool {
 	args := f.Called(err)
 	return args.Bool(0)
 }
+
+func (f *FakeOsExecutor) Rename(oldPath, newPath string) error {
+	args := f.Called(oldPath, newPath)
+	return args.Error(0)
+}

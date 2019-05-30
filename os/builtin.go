@@ -49,6 +49,7 @@ var osOpenfile = os.OpenFile
 var osReadlink = os.Readlink
 var osRemove = os.Remove
 var osRemoveAll = os.RemoveAll
+var osRename = os.Rename
 var osStat = os.Stat
 var osStderr = os.Stderr
 var osStdin = os.Stdin

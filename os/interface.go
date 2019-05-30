@@ -51,6 +51,7 @@ type (
 		Remove(path string) error
 		RemoveAll(path string) error
 		RemoveContents(path string, limit int) error
+		Rename(oldPath, newPath string) error
 		ResolvePath(path string) (string, error)
 		SetStderr(v io.Writer)
 		SetStdin(v io.Reader)

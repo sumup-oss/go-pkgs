@@ -382,3 +382,7 @@ func (ex *RealOsExecutor) CopyDir(src, dst string) error {
 func (ex *RealOsExecutor) IsExist(err error) bool {
 	return osIsExist(err)
 }
+
+func (ex *RealOsExecutor) Rename(oldPath, newPath string) error {
+	return osRename(oldPath, newPath)
+}
