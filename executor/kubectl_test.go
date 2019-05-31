@@ -25,7 +25,7 @@ func TestKubectl_RolloutStatus(t *testing.T) {
 				"",
 			).Return([]byte("output is ignored"), []byte(nil), nil)
 
-			kubectl := NewKubectl(executor, "", "svc.cluster.local").(*Kubectl)
+			kubectl := NewKubectl(executor, "", "svc.cluster.local")
 
 			_ = kubectl.RolloutStatus(time.Second*5, "deployment/foo", "default")
 
@@ -126,7 +126,7 @@ func TestKubectl_JobStatus(t *testing.T) {
 					mock.Anything,
 				).Return([]byte(test.KubectlStdout), []byte{}, nil)
 
-				kubectl := NewKubectl(executor, "", "svc.cluster.local").(*Kubectl)
+				kubectl := NewKubectl(executor, "", "svc.cluster.local")
 
 				status, err := kubectl.JobStatus("foo", "default")
 				if test.ExpectError {
@@ -154,7 +154,7 @@ func TestKubectl_JobStatus(t *testing.T) {
 				"",
 			).Return(statusJSON, []byte{}, nil)
 
-			kubectl := NewKubectl(executor, "", "svc.cluster.local").(*Kubectl)
+			kubectl := NewKubectl(executor, "", "svc.cluster.local")
 
 			_, _ = kubectl.JobStatus("foo", "default")
 
@@ -177,10 +177,127 @@ func TestKubectl_JobStatus(t *testing.T) {
 				mock.Anything,
 			).Return(statusJSON, []byte{}, assert.AnError)
 
-			kubectl := NewKubectl(executor, "", "svc.cluster.local").(*Kubectl)
-
+			kubectl := NewKubectl(executor, "", "svc.cluster.local")
 			status, err := kubectl.JobStatus("foo", "default")
 			assert.Equal(t, assert.AnError, err)
 			assert.Equal(t, KubernetesJobStatusUnknown, status)
 		})
+}
+
+func TestKubectl_DeleteAllResourcesByLabel(t *testing.T) {
+	t.Run(
+		"with empty labels specified, it generates kubectl command without label arguments",
+		func(t *testing.T) {
+			t.Parallel()
+
+			executor := ostest.NewFakeOsExecutor(t)
+
+			namespaceArg := "mynamespace"
+			labelsArg := make(map[string]string)
+			executor.On(
+				"Execute",
+				"kubectl",
+				[]string{
+					"-n",
+					namespaceArg,
+					"delete",
+					"all,ing",
+				},
+				[]string(nil),
+				"",
+			).Return([]byte{}, []byte{}, nil)
+
+			kubectl := NewKubectl(executor, "", "")
+
+			actualErr := kubectl.DeleteAllResourcesByLabel(namespaceArg, labelsArg)
+			assert.Nil(t, actualErr)
+
+			executor.AssertExpectations(t)
+		},
+	)
+
+	t.Run(
+		"with nil labels specified, it generates kubectl command without label arguments",
+		func(t *testing.T) {
+			t.Parallel()
+
+			executor := ostest.NewFakeOsExecutor(t)
+
+			namespaceArg := "mynamespace"
+			var labelsArg map[string]string
+			labelsArg = nil
+
+			executor.On(
+				"Execute",
+				"kubectl",
+				[]string{
+					"-n",
+					namespaceArg,
+					"delete",
+					"all,ing",
+				},
+				[]string(nil),
+				"",
+			).Return([]byte{}, []byte{}, nil)
+
+			kubectl := NewKubectl(executor, "", "")
+
+			actualErr := kubectl.DeleteAllResourcesByLabel(namespaceArg, labelsArg)
+			assert.Nil(t, actualErr)
+
+			executor.AssertExpectations(t)
+		},
+	)
+
+	t.Run(
+		"with some non-blank labels specified, it generates kubectl command with label arguments",
+		func(t *testing.T) {
+			t.Parallel()
+
+			executor := ostest.NewFakeOsExecutor(t)
+
+			namespaceArg := "mynamespace"
+			labelsArg := map[string]string{"test1": "value1", "test2": "value2"}
+
+			executor.On(
+				"Execute",
+				"kubectl",
+				// NOTE: Since order is not guaranteed of labels due to nature of map structure used,
+				// manually verify that the expected args are there.
+				mock.MatchedBy(func(args []string) bool {
+					if len(args) != 8 {
+						return false
+					}
+
+					if !(args[0] == "-n" &&
+						args[1] == namespaceArg &&
+						args[2] == "delete" &&
+						args[3] == "all,ing" &&
+						args[4] == "-l" &&
+						args[6] == "-l") {
+						return false
+					}
+
+					if args[5] == "test1=value1" {
+						return args[7] == "test2=value2"
+					}
+
+					if args[5] == "test2=value2" {
+						return args[7] == "test1=value1"
+					}
+
+					return false
+				}),
+				[]string(nil),
+				"",
+			).Return([]byte{}, []byte{}, nil)
+
+			kubectl := NewKubectl(executor, "", "")
+
+			actualErr := kubectl.DeleteAllResourcesByLabel(namespaceArg, labelsArg)
+			assert.Nil(t, actualErr)
+
+			executor.AssertExpectations(t)
+		},
+	)
 }
