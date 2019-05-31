@@ -14,27 +14,6 @@ import (
 )
 
 type (
-	KubectlInterface interface {
-		Apply(manifest string, namespace string) error
-		Delete(manifest string) error
-		Create(manifest string) error
-		ClusterInfo() error
-		GetToken() ([]byte, error)
-		GetServiceAccountSecret(namespace, name, dataKeyName string) (string, error)
-		GetIngressHost(namespace, name string) (string, error)
-		GetServices(namespace string) ([]*KubernetesService, error)
-		GetService(name, namespace string) (*KubernetesService, error)
-		ApplyConfigmap(name, namespace string, data map[string]string) error
-		ApplyService(service *KubernetesService) error
-		GetServiceFQDN(namespace, serviceName string) (string, error)
-		GetServiceMeta(namespace, serviceName, key string) (string, error)
-		GetServicePort(namespace, serviceName, portName string) (string, error)
-		GetIngresses(namespace string) ([]*KubernetesIngress, error)
-		RolloutStatus(timeout time.Duration, resource, namespace string) error
-		JobStatus(name, namespace string) (KubernetesJobStatus, error)
-		DeleteResource(namespace, resourceType, resourceName string) error
-		DeleteAllResources(namespace, resourceType string) error
-	}
 	KubectlServiceAccountInfo struct {
 		Secrets []struct {
 			Name string `json:"name"`
@@ -67,6 +46,72 @@ type (
 			Failed     int                      `json:"failed"`
 		} `json:"status"`
 	}
+
+	KubernetesServicesResponse struct {
+		Items []*KubernetesService `json:"items"`
+	}
+
+	KubernetesService struct {
+		APIVersion string                     `json:"apiVersion"`
+		Kind       string                     `json:"kind"`
+		Metadata   *KubernetesServiceMetadata `json:"metadata"`
+		Spec       *KubernetesServiceSpec     `json:"spec"`
+	}
+
+	KubernetesServiceMetadata struct {
+		Annotations map[string]string `json:"annotations"`
+		Name        string            `json:"name"`
+		Namespace   string            `json:"namespace"`
+	}
+
+	KubernetesServiceSpec struct {
+		ClusterIP             string                         `json:"clusterIP"`
+		ExternalTrafficPolicy string                         `json:"externalTrafficPolicy"`
+		Ports                 []*KubernetesServiceSpecPort   `json:"ports"`
+		Selector              *KubernetesServiceSpecSelector `json:"selector"`
+		SessionAffinity       string                         `json:"sessionAffinity"`
+		Type                  string                         `json:"type"`
+	}
+
+	KubernetesServiceSpecSelector struct {
+		App string `json:"app"`
+	}
+
+	KubernetesServiceSpecPort struct {
+		Name       string      `json:"name"`
+		NodePort   json.Number `json:"nodePort,Number"`
+		Port       json.Number `json:"port,Number"`
+		Protocol   string      `json:"protocol"`
+		TargetPort json.Number `json:"targetPort,Number"`
+	}
+
+	KubernetesIngressesResponse struct {
+		Items []*KubernetesIngress `json:"items"`
+	}
+
+	KubernetesIngress struct {
+		Metadata *KubernetesIngressMetadata `json:"metadata"`
+		Spec     *KubernetesIngressSpec     `json:"spec"`
+	}
+
+	KubernetesIngressMetadata struct {
+		Annotations map[string]string `json:"annotations"`
+		Name        string            `json:"name"`
+		Namespace   string            `json:"namespace"`
+	}
+
+	KubernetesIngressSpec struct {
+		Rules []*KubernetesIngressRule `json:"rules"`
+	}
+
+	KubernetesIngressRule struct {
+		Host string `json:"host"`
+	}
+
+	KubernetesIngressFirstAddress struct {
+		Host string `json:"host"`
+	}
+
 	Kubectl struct {
 		commandExecutor          pkgOs.CommandExecutor
 		GlobalOptions            map[string]string
@@ -79,7 +124,7 @@ func NewKubectl(
 	commandExecutor pkgOs.CommandExecutor,
 	kubectlContext,
 	kubernetesInternalDomain string,
-) KubectlInterface {
+) *Kubectl {
 	globalOptions := make(map[string]string)
 
 	if len(kubectlContext) > 0 {
@@ -296,72 +341,6 @@ func (k *Kubectl) GetServiceAccountSecret(namespace, name, dataKeyName string) (
 		return "", fmt.Errorf("unknown secret name %s", dataKeyName)
 	}
 }
-
-type KubernetesServicesResponse struct {
-	Items []*KubernetesService `json:"items"`
-}
-
-type KubernetesService struct {
-	APIVersion string                     `json:"apiVersion"`
-	Kind       string                     `json:"kind"`
-	Metadata   *KubernetesServiceMetadata `json:"metadata"`
-	Spec       *KubernetesServiceSpec     `json:"spec"`
-}
-
-type KubernetesServiceMetadata struct {
-	Annotations map[string]string `json:"annotations"`
-	Name        string            `json:"name"`
-	Namespace   string            `json:"namespace"`
-}
-
-type KubernetesServiceSpec struct {
-	ClusterIP             string                         `json:"clusterIP"`
-	ExternalTrafficPolicy string                         `json:"externalTrafficPolicy"`
-	Ports                 []*KubernetesServiceSpecPort   `json:"ports"`
-	Selector              *KubernetesServiceSpecSelector `json:"selector"`
-	SessionAffinity       string                         `json:"sessionAffinity"`
-	Type                  string                         `json:"type"`
-}
-
-type KubernetesServiceSpecSelector struct {
-	App string `json:"app"`
-}
-
-type KubernetesServiceSpecPort struct {
-	Name       string      `json:"name"`
-	NodePort   json.Number `json:"nodePort,Number"`
-	Port       json.Number `json:"port,Number"`
-	Protocol   string      `json:"protocol"`
-	TargetPort json.Number `json:"targetPort,Number"`
-}
-
-type KubernetesIngressesResponse struct {
-	Items []*KubernetesIngress `json:"items"`
-}
-
-type KubernetesIngress struct {
-	Metadata *KubernetesIngressMetadata `json:"metadata"`
-	Spec     *KubernetesIngressSpec     `json:"spec"`
-}
-
-type KubernetesIngressMetadata struct {
-	Annotations map[string]string `json:"annotations"`
-	Name        string            `json:"name"`
-	Namespace   string            `json:"namespace"`
-}
-
-type KubernetesIngressSpec struct {
-	Rules []*KubernetesIngressRule `json:"rules"`
-}
-
-type KubernetesIngressRule struct {
-	Host string `json:"host"`
-}
-
-type KubernetesIngressFirstAddress struct {
-	Host string `json:"host"`
-}
-
 func (k *Kubectl) GetServices(namespace string) ([]*KubernetesService, error) {
 	stdout, _, err := k.executeCommand(
 		[]string{"get", "-n", namespace, "service", "-o", "json"},
@@ -538,6 +517,23 @@ func (k *Kubectl) DeleteResource(namespace, resourceType, resourceName string) e
 
 func (k *Kubectl) DeleteAllResources(namespace, resourceType string) error {
 	commandArgs := []string{"-n", namespace, "delete", "--all", resourceType}
+	_, stderr, err := k.executeCommand(commandArgs, nil)
+	if err != nil {
+		return fmt.Errorf("deleting resources failed, err: %v, stderr: %s", err, stderr)
+	}
+
+	return nil
+}
+
+func (k *Kubectl) DeleteAllResourcesByLabel(namespace string, labels map[string]string) error {
+	// NOTE: Delete all resources and ingress which appears not to be deletable by default
+	// ref: https://github.com/kubernetes/kubectl/issues/7
+	commandArgs := []string{"-n", namespace, "delete", "all,ing"}
+
+	for k, v := range labels {
+		commandArgs = append(commandArgs, "-l", fmt.Sprintf("%s=%s", k, v))
+	}
+
 	_, stderr, err := k.executeCommand(commandArgs, nil)
 	if err != nil {
 		return fmt.Errorf("deleting resources failed, err: %v, stderr: %s", err, stderr)
