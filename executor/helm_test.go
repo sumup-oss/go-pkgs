@@ -108,9 +108,8 @@ func TestHelm_GetManifest(t *testing.T) {
 			nameArg := "example"
 			namespaceArg := "default"
 			valuesArg := map[string]string{}
-			valuesArg["excludedAttributes"] = "request.headers.cookie,request.headers.authorization,request.headers.proxyAuthorization,request.headers.setCookie*,request.headers.x*,response.headers.cookie,response.headers.authorization,response.headers.proxyAuthorization,response.headers.setCookie*,response.headers.x*"
-
 			stringValuesArg := map[string]string{}
+			stringValuesArg["excludedAttributes"] = "request.headers.cookie,request.headers.authorization,request.headers.proxyAuthorization,request.headers.setCookie*,request.headers.x*,response.headers.cookie,response.headers.authorization,response.headers.proxyAuthorization,response.headers.setCookie*,response.headers.x*"
 
 			helmInstance := NewHelm(osExecutor)
 
@@ -125,7 +124,7 @@ func TestHelm_GetManifest(t *testing.T) {
 				helmInstance.kubeVersion,
 				"--namespace",
 				namespaceArg,
-				"--set",
+				"--set-string",
 				`excludedAttributes=request.headers.cookie\,request.headers.authorization\,request.headers.proxyAuthorization\,request.headers.setCookie*\,request.headers.x*\,response.headers.cookie\,response.headers.authorization\,response.headers.proxyAuthorization\,response.headers.setCookie*\,response.headers.x*`,
 				locationArg,
 			}
@@ -163,9 +162,8 @@ func TestHelm_GetManifest(t *testing.T) {
 			nameArg := "example"
 			namespaceArg := "default"
 			valuesArg := map[string]string{}
-			valuesArg["excludedAttributes"] = "request.headers.cookie,request.headers.authorization,request.headers.proxyAuthorization,request.headers.setCookie*,request.headers.x*,response.headers.cookie,response.headers.authorization,response.headers.proxyAuthorization,response.headers.setCookie*,response.headers.x*"
-
 			stringValuesArg := map[string]string{}
+			stringValuesArg["excludedAttributes"] = "request.headers.cookie,request.headers.authorization,request.headers.proxyAuthorization,request.headers.setCookie*,request.headers.x*,response.headers.cookie,response.headers.authorization,response.headers.proxyAuthorization,response.headers.setCookie*,response.headers.x*"
 			stringValuesArg["someTest"] = "true"
 
 			helmInstance := NewHelm(osExecutor)
@@ -181,7 +179,7 @@ func TestHelm_GetManifest(t *testing.T) {
 				helmInstance.kubeVersion,
 				"--namespace",
 				namespaceArg,
-				"--set",
+				"--set-string",
 				`excludedAttributes=request.headers.cookie\,request.headers.authorization\,request.headers.proxyAuthorization\,request.headers.setCookie*\,request.headers.x*\,response.headers.cookie\,response.headers.authorization\,response.headers.proxyAuthorization\,response.headers.setCookie*\,response.headers.x*`,
 				"--set-string",
 				`someTest=true`,
