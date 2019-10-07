@@ -55,6 +55,12 @@ func (tl *TestLogger) SetLevel(level logger.Level) {
 	tl.Level = level
 }
 
+func (tl *TestLogger) GetLevel() logger.Level {
+	tl.mu.Lock()
+	defer tl.mu.Unlock()
+	return tl.Level
+}
+
 func (tl *TestLogger) Print(args ...interface{}) {
 	tl.Info(args...)
 }

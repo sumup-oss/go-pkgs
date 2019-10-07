@@ -21,31 +21,32 @@ var _ logger.Logger = (*NilLogger)(nil)
 type NilLogger struct {
 }
 
-func (logger *NilLogger) Debug(args ...interface{})                                   {}
-func (logger *NilLogger) Print(args ...interface{})                                   {}
-func (logger *NilLogger) Info(args ...interface{})                                    {}
-func (logger *NilLogger) Warn(args ...interface{})                                    {}
-func (logger *NilLogger) Warning(args ...interface{})                                 {}
-func (logger *NilLogger) Error(args ...interface{})                                   {}
-func (logger *NilLogger) Panic(args ...interface{})                                   {}
-func (logger *NilLogger) Fatal(args ...interface{})                                   {}
-func (logger *NilLogger) Debugf(format string, args ...interface{})                   {}
-func (logger *NilLogger) Printf(format string, args ...interface{})                   {}
-func (logger *NilLogger) Infof(format string, args ...interface{})                    {}
-func (logger *NilLogger) Warnf(format string, args ...interface{})                    {}
-func (logger *NilLogger) Warningf(format string, args ...interface{})                 {}
-func (logger *NilLogger) Errorf(format string, args ...interface{})                   {}
-func (logger *NilLogger) Panicf(format string, args ...interface{})                   {}
-func (logger *NilLogger) Fatalf(format string, args ...interface{})                   {}
-func (logger *NilLogger) Debugln(args ...interface{})                                 {}
-func (logger *NilLogger) Println(args ...interface{})                                 {}
-func (logger *NilLogger) Infoln(args ...interface{})                                  {}
-func (logger *NilLogger) Warnln(args ...interface{})                                  {}
-func (logger *NilLogger) Warningln(args ...interface{})                               {}
-func (logger *NilLogger) Errorln(args ...interface{})                                 {}
-func (logger *NilLogger) Panicln(args ...interface{})                                 {}
-func (logger *NilLogger) Fatalln(args ...interface{})                                 {}
-func (logger *NilLogger) Logf(level logger.Level, format string, args ...interface{}) {}
-func (logger *NilLogger) Log(level logger.Level, args ...interface{})                 {}
-func (logger *NilLogger) Logln(level logger.Level, args ...interface{})               {}
-func (logger *NilLogger) SetLevel(level logger.Level)                                 {}
+func (l *NilLogger) Debug(args ...interface{})                                   {}
+func (l *NilLogger) Print(args ...interface{})                                   {}
+func (l *NilLogger) Info(args ...interface{})                                    {}
+func (l *NilLogger) Warn(args ...interface{})                                    {}
+func (l *NilLogger) Warning(args ...interface{})                                 {}
+func (l *NilLogger) Error(args ...interface{})                                   {}
+func (l *NilLogger) Panic(args ...interface{})                                   {}
+func (l *NilLogger) Fatal(args ...interface{})                                   {}
+func (l *NilLogger) Debugf(format string, args ...interface{})                   {}
+func (l *NilLogger) Printf(format string, args ...interface{})                   {}
+func (l *NilLogger) Infof(format string, args ...interface{})                    {}
+func (l *NilLogger) Warnf(format string, args ...interface{})                    {}
+func (l *NilLogger) Warningf(format string, args ...interface{})                 {}
+func (l *NilLogger) Errorf(format string, args ...interface{})                   {}
+func (l *NilLogger) Panicf(format string, args ...interface{})                   {}
+func (l *NilLogger) Fatalf(format string, args ...interface{})                   {}
+func (l *NilLogger) Debugln(args ...interface{})                                 {}
+func (l *NilLogger) Println(args ...interface{})                                 {}
+func (l *NilLogger) Infoln(args ...interface{})                                  {}
+func (l *NilLogger) Warnln(args ...interface{})                                  {}
+func (l *NilLogger) Warningln(args ...interface{})                               {}
+func (l *NilLogger) Errorln(args ...interface{})                                 {}
+func (l *NilLogger) Panicln(args ...interface{})                                 {}
+func (l *NilLogger) Fatalln(args ...interface{})                                 {}
+func (l *NilLogger) Logf(level logger.Level, format string, args ...interface{}) {}
+func (l *NilLogger) Log(level logger.Level, args ...interface{})                 {}
+func (l *NilLogger) Logln(level logger.Level, args ...interface{})               {}
+func (l *NilLogger) SetLevel(level logger.Level)                                 {}
+func (l *NilLogger) GetLevel() logger.Level                                      { return logger.InfoLevel }
