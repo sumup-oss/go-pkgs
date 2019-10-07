@@ -43,4 +43,5 @@ type Logger interface {
 	Log(level Level, args ...interface{})
 	Logln(level Level, args ...interface{})
 	SetLevel(level Level)
+	GetLevel() Level
 }
