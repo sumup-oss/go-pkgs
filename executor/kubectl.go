@@ -139,6 +139,12 @@ func NewKubectl(
 	}
 }
 
+func (k *Kubectl) ResetExecutor(commandExecutor pkgOs.CommandExecutor) pkgOs.CommandExecutor {
+	old := k.commandExecutor
+	k.commandExecutor = commandExecutor
+	return old
+}
+
 func (k *Kubectl) compileCommand() []string {
 	var options = make([]string, len(k.GlobalOptions)/2)
 
