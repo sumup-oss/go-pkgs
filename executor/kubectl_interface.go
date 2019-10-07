@@ -2,6 +2,8 @@ package executor
 
 import (
 	"time"
+
+	pkgOs "github.com/sumup-oss/go-pkgs/os"
 )
 
 type KubectlInterface interface {
@@ -25,4 +27,5 @@ type KubectlInterface interface {
 	DeleteResource(namespace, resourceType, resourceName string) error
 	DeleteAllResources(namespace, resourceType string) error
 	DeleteAllResourcesByLabel(namespace string, labels map[string]string) error
+	ResetExecutor(commandExecutor pkgOs.CommandExecutor) pkgOs.CommandExecutor
 }
