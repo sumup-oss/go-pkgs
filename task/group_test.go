@@ -15,10 +15,11 @@
 package task_test
 
 import (
+	"context"
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/assert"
+
 	"github.com/sumup-oss/go-pkgs/task"
 )
 
@@ -64,7 +65,7 @@ func TestGroup_Go(t *testing.T) {
 		foo.RunUntil <- nil
 		bar.RunUntil <- nil
 
-		err := group.Wait(time.Hour)
+		err := group.Wait(context.Background())
 		assert.NoError(t, err)
 
 		assert.Equal(t, 1, foo.RunCount)
@@ -89,7 +90,7 @@ func TestGroup_Go(t *testing.T) {
 			foo.RunUntil <- assert.AnError
 		}()
 
-		err := group.Wait(time.Hour)
+		err := group.Wait(context.Background())
 		assert.EqualError(t, err, assert.AnError.Error())
 
 		assert.Equal(t, 1, foo.RunCount)
@@ -111,8 +112,10 @@ func TestGroup_Go(t *testing.T) {
 		<-foo.RunReady
 		<-bar.RunReady
 
-		err := group.Wait(1)
-		assert.True(t, task.IsDeadlineError(err))
+		ctx, cancel := context.WithTimeout(context.Background(), 1)
+		defer cancel()
+		err := group.Wait(ctx)
+		assert.Equal(t, context.DeadlineExceeded, err)
 
 		assert.Equal(t, 1, foo.RunCount)
 		assert.Equal(t, 1, bar.RunCount)
@@ -130,7 +133,7 @@ func TestGroup_Go(t *testing.T) {
 		group.Cancel()
 		group.Go(foo.Run, bar.Run)
 
-		err := group.Wait(time.Hour)
+		err := group.Wait(context.Background())
 		assert.NoError(t, err)
 
 		assert.Equal(t, 0, foo.RunCount)
@@ -157,7 +160,7 @@ func TestGroup_Cancel(t *testing.T) {
 			group.Cancel()
 		}()
 
-		err := group.Wait(0)
+		err := group.Wait(context.Background())
 		assert.NoError(t, err)
 
 		assert.Equal(t, 1, foo.RunCount)

@@ -15,14 +15,8 @@
 package task
 
 import (
-	"errors"
+	"context"
 	"sync"
-	"time"
-)
-
-var (
-	// ErrDeadline is returned when the group wait deadline is exceeded.
-	ErrDeadline = errors.New("deadline exceeded")
 )
 
 // Group is used to wait for a group of tasks to finish.
@@ -73,21 +67,15 @@ func (g *Group) Go(tasks ...TaskFunc) {
 
 // Wait until all tasks are stopped.
 // Returns the first encountered error if any.
-// If deadline is exceeded all tasks are canceled and the returned error is the deadline error.
-// IsDeadlineError func can be used to check if the tasks were canceled due a deadline.
-// Passing 0 for deadline means there will be no deadline, and Wait is blocked until all of the
-// tasks are finished.
-func (g *Group) Wait(deadline time.Duration) error {
-	if deadline > 0 {
-		timer := time.NewTimer(deadline)
-		defer timer.Stop()
-
+// If the context is done all tasks are canceled and the context error is returned.
+func (g *Group) Wait(ctx context.Context) error {
+	if ctx != context.TODO() {
 		go func() {
 			select {
 			case <-g.cancelCh:
 				return
-			case <-timer.C:
-				g.cancelWithError(ErrDeadline)
+			case <-ctx.Done():
+				g.cancelWithError(ctx.Err())
 			}
 		}()
 	}
@@ -123,8 +111,4 @@ func (g *Group) Cancel() {
 	defer g.mu.Unlock()
 
 	g.unsafeCancel()
-}
-
-func IsDeadlineError(err error) bool {
-	return err == ErrDeadline
 }
