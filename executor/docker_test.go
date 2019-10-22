@@ -15,11 +15,14 @@
 package executor
 
 import (
+	"context"
 	"errors"
+	"testing"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
 	"github.com/sumup-oss/go-pkgs/os/ostest"
-	"testing"
 )
 
 func TestNewDocker(t *testing.T) {
@@ -36,7 +39,8 @@ func TestDocker_Push(t *testing.T) {
 		imageArg := "example"
 
 		executorArg.On(
-			"Execute",
+			"ExecuteContext",
+			context.Background(),
 			"docker",
 			[]string{"push", imageArg},
 			[]string(nil),
@@ -44,7 +48,7 @@ func TestDocker_Push(t *testing.T) {
 		).Return([]byte{}, []byte{}, nil)
 
 		dockerInstance := NewDocker(executorArg)
-		actual := dockerInstance.Push(imageArg)
+		actual := dockerInstance.Push(context.Background(), imageArg)
 		require.Nil(t, actual)
 	})
 
@@ -56,7 +60,8 @@ func TestDocker_Push(t *testing.T) {
 		fakeStdout := []byte("fake stdout")
 		fakeStderr := []byte("fake stderr")
 		executorArg.On(
-			"Execute",
+			"ExecuteContext",
+			context.Background(),
 			"docker",
 			[]string{"push", imageArg},
 			[]string(nil),
@@ -64,7 +69,7 @@ func TestDocker_Push(t *testing.T) {
 		).Return(fakeStdout, fakeStderr, fakeError)
 
 		dockerInstance := NewDocker(executorArg)
-		actual := dockerInstance.Push(imageArg)
+		actual := dockerInstance.Push(context.Background(), imageArg)
 		require.NotNil(t, actual)
 		assert.Contains(t, actual.Error(), fakeError.Error())
 		assert.Contains(t, actual.Error(), string(fakeStdout))
@@ -78,7 +83,8 @@ func TestDocker_Pull(t *testing.T) {
 		imageArg := "example"
 
 		executorArg.On(
-			"Execute",
+			"ExecuteContext",
+			context.Background(),
 			"docker",
 			[]string{"pull", imageArg},
 			[]string(nil),
@@ -86,7 +92,7 @@ func TestDocker_Pull(t *testing.T) {
 		).Return([]byte{}, []byte{}, nil)
 
 		dockerInstance := NewDocker(executorArg)
-		actual := dockerInstance.Pull(imageArg)
+		actual := dockerInstance.Pull(context.Background(), imageArg)
 		require.Nil(t, actual)
 	})
 
@@ -98,7 +104,8 @@ func TestDocker_Pull(t *testing.T) {
 		fakeStdout := []byte("fake stdout")
 		fakeStderr := []byte("fake stderr")
 		executorArg.On(
-			"Execute",
+			"ExecuteContext",
+			context.Background(),
 			"docker",
 			[]string{"pull", imageArg},
 			[]string(nil),
@@ -106,7 +113,7 @@ func TestDocker_Pull(t *testing.T) {
 		).Return(fakeStdout, fakeStderr, fakeError)
 
 		dockerInstance := NewDocker(executorArg)
-		actual := dockerInstance.Pull(imageArg)
+		actual := dockerInstance.Pull(context.Background(), imageArg)
 		require.NotNil(t, actual)
 		assert.Contains(t, actual.Error(), fakeError.Error())
 		assert.Contains(t, actual.Error(), string(fakeStdout))
@@ -121,7 +128,8 @@ func TestDocker_Tag(t *testing.T) {
 		newImageArg := "newexample"
 
 		executorArg.On(
-			"Execute",
+			"ExecuteContext",
+			context.Background(),
 			"docker",
 			[]string{"tag", oldImageArg, newImageArg},
 			[]string(nil),
@@ -129,7 +137,7 @@ func TestDocker_Tag(t *testing.T) {
 		).Return([]byte{}, []byte{}, nil)
 
 		dockerInstance := NewDocker(executorArg)
-		actual := dockerInstance.Tag(oldImageArg, newImageArg)
+		actual := dockerInstance.Tag(context.Background(), oldImageArg, newImageArg)
 		require.Nil(t, actual)
 	})
 
@@ -142,7 +150,8 @@ func TestDocker_Tag(t *testing.T) {
 		fakeStdout := []byte("fake stdout")
 		fakeStderr := []byte("fake stderr")
 		executorArg.On(
-			"Execute",
+			"ExecuteContext",
+			context.Background(),
 			"docker",
 			[]string{"tag", oldImageArg, newImageArg},
 			[]string(nil),
@@ -150,7 +159,7 @@ func TestDocker_Tag(t *testing.T) {
 		).Return(fakeStdout, fakeStderr, fakeError)
 
 		dockerInstance := NewDocker(executorArg)
-		actual := dockerInstance.Tag(oldImageArg, newImageArg)
+		actual := dockerInstance.Tag(context.Background(), oldImageArg, newImageArg)
 		require.NotNil(t, actual)
 		assert.Contains(t, actual.Error(), fakeError.Error())
 		assert.Contains(t, actual.Error(), string(fakeStdout))
@@ -176,7 +185,8 @@ func TestDocker_Build(t *testing.T) {
 			fakeStdout := []byte("fake stdout")
 			fakeStderr := []byte("fake stderr")
 			executorArg.On(
-				"Execute",
+				"ExecuteContext",
+				context.Background(),
 				"docker",
 				[]string{
 					"build",
@@ -191,7 +201,7 @@ func TestDocker_Build(t *testing.T) {
 			).Return(fakeStdout, fakeStderr, fakeError)
 
 			dockerInstance := NewDocker(executorArg)
-			actual := dockerInstance.Build(optionsArg)
+			actual := dockerInstance.Build(context.Background(), optionsArg)
 			require.NotNil(t, actual)
 			assert.Contains(t, actual.Error(), fakeError.Error())
 			assert.Contains(t, actual.Error(), string(fakeStdout))
@@ -213,7 +223,8 @@ func TestDocker_Build(t *testing.T) {
 			}
 
 			executorArg.On(
-				"Execute",
+				"ExecuteContext",
+				context.Background(),
 				"docker",
 				[]string{
 					"build",
@@ -228,7 +239,7 @@ func TestDocker_Build(t *testing.T) {
 			).Return([]byte{}, []byte{}, nil)
 
 			dockerInstance := NewDocker(executorArg)
-			actual := dockerInstance.Build(optionsArg)
+			actual := dockerInstance.Build(context.Background(), optionsArg)
 			require.Nil(t, actual)
 		},
 	)
@@ -247,7 +258,8 @@ func TestDocker_Build(t *testing.T) {
 			}
 
 			executorArg.On(
-				"Execute",
+				"ExecuteContext",
+				context.Background(),
 				"docker",
 				[]string{
 					"build",
@@ -264,7 +276,7 @@ func TestDocker_Build(t *testing.T) {
 			).Return([]byte{}, []byte{}, nil)
 
 			dockerInstance := NewDocker(executorArg)
-			actual := dockerInstance.Build(optionsArg)
+			actual := dockerInstance.Build(context.Background(), optionsArg)
 			require.Nil(t, actual)
 		},
 	)
@@ -283,7 +295,8 @@ func TestDocker_Build(t *testing.T) {
 			}
 
 			executorArg.On(
-				"Execute",
+				"ExecuteContext",
+				context.Background(),
 				"docker",
 				[]string{
 					"build",
@@ -300,7 +313,7 @@ func TestDocker_Build(t *testing.T) {
 			).Return([]byte{}, []byte{}, nil)
 
 			dockerInstance := NewDocker(executorArg)
-			actual := dockerInstance.Build(optionsArg)
+			actual := dockerInstance.Build(context.Background(), optionsArg)
 			require.Nil(t, actual)
 		},
 	)
@@ -319,7 +332,8 @@ func TestDocker_Build(t *testing.T) {
 			}
 
 			executorArg.On(
-				"Execute",
+				"ExecuteContext",
+				context.Background(),
 				"docker",
 				[]string{
 					"build",
@@ -335,7 +349,7 @@ func TestDocker_Build(t *testing.T) {
 			).Return([]byte{}, []byte{}, nil)
 
 			dockerInstance := NewDocker(executorArg)
-			actual := dockerInstance.Build(optionsArg)
+			actual := dockerInstance.Build(context.Background(), optionsArg)
 			require.Nil(t, actual)
 		},
 	)
@@ -354,7 +368,8 @@ func TestDocker_Build(t *testing.T) {
 			}
 
 			executorArg.On(
-				"Execute",
+				"ExecuteContext",
+				context.Background(),
 				"docker",
 				[]string{
 					"build",
@@ -370,7 +385,7 @@ func TestDocker_Build(t *testing.T) {
 			).Return([]byte{}, []byte{}, nil)
 
 			dockerInstance := NewDocker(executorArg)
-			actual := dockerInstance.Build(optionsArg)
+			actual := dockerInstance.Build(context.Background(), optionsArg)
 			require.Nil(t, actual)
 		},
 	)
@@ -385,7 +400,8 @@ func TestDocker_Login(t *testing.T) {
 		registryUrlArg := "exampleRegistry"
 
 		executorArg.On(
-			"Execute",
+			"ExecuteContext",
+			context.Background(),
 			"docker",
 			[]string{"login", "-u", usernameArg, "-p", passwordArg, registryUrlArg},
 			[]string(nil),
@@ -393,7 +409,7 @@ func TestDocker_Login(t *testing.T) {
 		).Return([]byte{}, []byte{}, nil)
 
 		dockerInstance := NewDocker(executorArg)
-		actual := dockerInstance.Login(usernameArg, passwordArg, registryUrlArg)
+		actual := dockerInstance.Login(context.Background(), usernameArg, passwordArg, registryUrlArg)
 		require.Nil(t, actual)
 	})
 
@@ -407,7 +423,8 @@ func TestDocker_Login(t *testing.T) {
 		fakeStdout := []byte("fake stdout")
 		fakeStderr := []byte("fake stderr")
 		executorArg.On(
-			"Execute",
+			"ExecuteContext",
+			context.Background(),
 			"docker",
 			[]string{"login", "-u", usernameArg, "-p", passwordArg, registryUrlArg},
 			[]string(nil),
@@ -415,7 +432,7 @@ func TestDocker_Login(t *testing.T) {
 		).Return(fakeStdout, fakeStderr, fakeError)
 
 		dockerInstance := NewDocker(executorArg)
-		actual := dockerInstance.Login(usernameArg, passwordArg, registryUrlArg)
+		actual := dockerInstance.Login(context.Background(), usernameArg, passwordArg, registryUrlArg)
 		require.NotNil(t, actual)
 		assert.Contains(t, actual.Error(), fakeError.Error())
 		assert.Contains(t, actual.Error(), string(fakeStdout))
