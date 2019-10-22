@@ -27,6 +27,7 @@ import (
 // Testing the golang standard library seems redundant at this point.
 
 var execCommand = exec.Command
+var execCommandContext = exec.CommandContext
 var ioutilReadDir = ioutil.ReadDir
 var ioutilReadFile = ioutil.ReadFile
 var ioutilTempDir = ioutil.TempDir

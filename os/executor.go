@@ -16,6 +16,7 @@ package os
 
 import (
 	"bytes"
+	"context"
 	"errors"
 	"io"
 	"os"
@@ -24,7 +25,7 @@ import (
 	"runtime"
 
 	//nolint:goimports
-	"github.com/mattes/go-expand-tilde"
+	tilde "github.com/mattes/go-expand-tilde"
 	"github.com/palantir/stacktrace"
 )
 
@@ -139,6 +140,19 @@ func (ex *RealOsExecutor) Execute(
 	return stdout.Bytes(), stderr.Bytes(), err
 }
 
+func (ex *RealOsExecutor) ExecuteContext(
+	ctx context.Context,
+	cmd string,
+	arg,
+	env []string,
+	dir string,
+) ([]byte, []byte, error) {
+	var stdout, stderr bytes.Buffer
+	err := ex.ExecuteWithStreamsContext(ctx, cmd, arg, env, dir, &stdout, &stderr)
+
+	return stdout.Bytes(), stderr.Bytes(), err
+}
+
 func (ex *RealOsExecutor) ExecuteWithStreams(
 	cmd string,
 	arg,
@@ -148,6 +162,29 @@ func (ex *RealOsExecutor) ExecuteWithStreams(
 	stderr io.Writer,
 ) error {
 	command := execCommand(cmd, arg...)
+
+	if len(env) > 0 {
+		command.Env = env
+	}
+
+	command.Stdout = stdout
+	command.Stderr = stderr
+	command.Dir = dir
+
+	err := command.Run()
+	return stacktrace.Propagate(err, "executing command failed")
+}
+
+func (ex *RealOsExecutor) ExecuteWithStreamsContext(
+	ctx context.Context,
+	cmd string,
+	arg,
+	env []string,
+	dir string,
+	stdout io.Writer,
+	stderr io.Writer,
+) error {
+	command := execCommandContext(ctx, cmd, arg...)
 
 	if len(env) > 0 {
 		command.Env = env
