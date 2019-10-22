@@ -15,6 +15,7 @@
 package ostest
 
 import (
+	"context"
 	"io"
 	stdOs "os"
 	"os/user"
@@ -60,6 +61,29 @@ func (f *FakeOsExecutor) Execute(
 	dir string,
 ) ([]byte, []byte, error) {
 	args := f.Called(cmd, arg, env, dir)
+	rawStdout := args.Get(0)
+	rawStderr := args.Get(1)
+	returnErr := args.Error(2)
+
+	var returnStdout, returnStderr []byte
+	if rawStdout != nil {
+		returnStdout = rawStdout.([]byte)
+	}
+	if rawStderr != nil {
+		returnStderr = rawStderr.([]byte)
+	}
+
+	return returnStdout, returnStderr, returnErr
+}
+
+func (f *FakeOsExecutor) ExecuteContext(
+	ctx context.Context,
+	cmd string,
+	arg []string,
+	env []string,
+	dir string,
+) ([]byte, []byte, error) {
+	args := f.Called(ctx, cmd, arg, env, dir)
 	rawStdout := args.Get(0)
 	rawStderr := args.Get(1)
 	returnErr := args.Error(2)
@@ -183,6 +207,19 @@ func (f *FakeOsExecutor) ExecuteWithStreams(
 	stderr io.Writer,
 ) error {
 	args := f.Called(cmd, arg, env, dir, stdout, stderr)
+	return args.Error(0)
+}
+
+func (f *FakeOsExecutor) ExecuteWithStreamsContext(
+	ctx context.Context,
+	cmd string,
+	arg []string,
+	env []string,
+	dir string,
+	stdout io.Writer,
+	stderr io.Writer,
+) error {
+	args := f.Called(ctx, cmd, arg, env, dir, stdout, stderr)
 	return args.Error(0)
 }
 

@@ -15,6 +15,7 @@
 package executor
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net"
@@ -64,19 +65,19 @@ func NewDocker(executor os.CommandExecutor) *Docker {
 	}
 }
 
-func (docker *Docker) Push(image string) error {
+func (docker *Docker) Push(ctx context.Context, image string) error {
 	args := []string{"push", image}
-	stdout, stderr, err := docker.commandExecutor.Execute("docker", args, nil, "")
+	stdout, stderr, err := docker.commandExecutor.ExecuteContext(ctx, "docker", args, nil, "")
 	return stacktrace.Propagate(err, "Stderr: %s, Stdout: %s", stderr, stdout)
 }
 
-func (docker *Docker) Pull(image string) error {
+func (docker *Docker) Pull(ctx context.Context, image string) error {
 	args := []string{"pull", image}
-	stdout, stderr, err := docker.commandExecutor.Execute("docker", args, nil, "")
+	stdout, stderr, err := docker.commandExecutor.ExecuteContext(ctx, "docker", args, nil, "")
 	return stacktrace.Propagate(err, "Stderr: %s, Stdout: %s", stderr, stdout)
 }
 
-func (docker *Docker) Build(options *DockerBuildOptions) error {
+func (docker *Docker) buildArgs(options *DockerBuildOptions) []string {
 	args := []string{"build", "-f", options.File, "--tag", options.Tag}
 
 	if options.Target != "" {
@@ -96,24 +97,30 @@ func (docker *Docker) Build(options *DockerBuildOptions) error {
 	}
 
 	args = append(args, options.ContextDir)
-	stdout, stderr, err := docker.commandExecutor.Execute("docker", args, nil, "")
+	return args
+}
+
+func (docker *Docker) Build(ctx context.Context, options *DockerBuildOptions) error {
+	args := docker.buildArgs(options)
+	stdout, stderr, err := docker.commandExecutor.ExecuteContext(ctx, "docker", args, nil, "")
 	return stacktrace.Propagate(err, "Stderr: %s, Stdout: %s", stderr, stdout)
 }
 
-func (docker *Docker) Tag(oldImage, newImage string) error {
+func (docker *Docker) Tag(ctx context.Context, oldImage, newImage string) error {
 	args := []string{"tag", oldImage, newImage}
-	stdout, stderr, err := docker.commandExecutor.Execute("docker", args, nil, "")
+	stdout, stderr, err := docker.commandExecutor.ExecuteContext(ctx, "docker", args, nil, "")
 	return stacktrace.Propagate(err, "Stderr: %s, Stdout: %s", stderr, stdout)
 }
 
-func (docker *Docker) Login(username, password, registryUrl string) error {
+func (docker *Docker) Login(ctx context.Context, username, password, registryUrl string) error {
 	args := []string{"login", "-u", username, "-p", password, registryUrl}
-	stdout, stderr, err := docker.commandExecutor.Execute("docker", args, nil, "")
+	stdout, stderr, err := docker.commandExecutor.ExecuteContext(ctx, "docker", args, nil, "")
 	return stacktrace.Propagate(err, "Stderr: %s, Stdout: %s", stderr, stdout)
 }
 
-func (docker *Docker) NetworkInspect(name string) (*DockerNetwork, error) {
-	stdout, _, err := docker.commandExecutor.Execute(
+func (docker *Docker) NetworkInspect(ctx context.Context, name string) (*DockerNetwork, error) {
+	stdout, _, err := docker.commandExecutor.ExecuteContext(
+		ctx,
 		docker.binaryPath,
 		[]string{"network", "inspect", name},
 		nil,
@@ -141,8 +148,8 @@ func (docker *Docker) NetworkInspect(name string) (*DockerNetwork, error) {
 	return network[0], nil
 }
 
-func (docker *Docker) NetworkGateway(name string) (string, error) {
-	network, err := docker.NetworkInspect(name)
+func (docker *Docker) NetworkGateway(ctx context.Context, name string) (string, error) {
+	network, err := docker.NetworkInspect(ctx, name)
 	if err != nil {
 		return "", stacktrace.NewError("failed to read docker network configuration")
 	}
@@ -196,7 +203,8 @@ func (docker *Docker) NetworkGateway(name string) (string, error) {
 
 		gatewayIP = matches[0][1]
 	case "darwin":
-		stdout, _, err := docker.commandExecutor.Execute(
+		stdout, _, err := docker.commandExecutor.ExecuteContext(
+			ctx,
 			"route",
 			[]string{"-n", "get", gatewayIP},
 			nil,

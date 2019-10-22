@@ -15,6 +15,7 @@
 package os
 
 import (
+	"context"
 	"io"
 	"os"
 	"os/user"
@@ -31,6 +32,7 @@ type (
 		Create(name string) (*os.File, error)
 		CurrentUser() (*user.User, error)
 		ExecuteWithStreams(cmd string, arg, env []string, dir string, stdout, stderr io.Writer) error
+		ExecuteWithStreamsContext(ctx context.Context, cmd string, arg, env []string, dir string, stdout, stderr io.Writer) error
 		Exit(statusCode int)
 		ExpandTilde(path string) (string, error)
 		Getenv(key string) string
@@ -68,6 +70,7 @@ type (
 	}
 	CommandExecutor interface {
 		Execute(cmd string, arg, env []string, dir string) ([]byte, []byte, error)
+		ExecuteContext(ctx context.Context, cmd string, arg, env []string, dir string) ([]byte, []byte, error)
 	}
 	EnvProvider interface {
 		Getenv(key string) string

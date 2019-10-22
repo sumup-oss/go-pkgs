@@ -15,6 +15,7 @@
 package executor
 
 import (
+	"context"
 	"strings"
 
 	"github.com/sumup-oss/go-pkgs/logger"
@@ -50,6 +51,23 @@ func (c *ExecuteLogger) Execute(cmd string, arg []string, env []string, dir stri
 	stderr := NewRealtimeWriter(c.log, c.logLevel)
 
 	err := c.ExecuteWithStreams(cmd, arg, env, dir, stdout, stderr)
+
+	return []byte(stdout.GetOutput()), []byte(stderr.GetOutput()), err
+}
+
+func (c *ExecuteLogger) ExecuteContext(
+	ctx context.Context,
+	cmd string,
+	arg []string,
+	env []string,
+	dir string,
+) ([]byte, []byte, error) {
+	c.log.Debugf("command# %s %s", cmd, strings.Join(arg, " "))
+
+	stdout := NewRealtimeWriter(c.log, c.logLevel)
+	stderr := NewRealtimeWriter(c.log, c.logLevel)
+
+	err := c.ExecuteWithStreamsContext(ctx, cmd, arg, env, dir, stdout, stderr)
 
 	return []byte(stdout.GetOutput()), []byte(stderr.GetOutput()), err
 }
