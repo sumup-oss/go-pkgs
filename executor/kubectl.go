@@ -62,19 +62,16 @@ type (
 		Annotations map[string]string `json:"annotations"`
 		Name        string            `json:"name"`
 		Namespace   string            `json:"namespace"`
+		Labels      map[string]string `json:"labels"`
 	}
 
 	KubernetesServiceSpec struct {
-		ClusterIP             string                         `json:"clusterIP"`
-		ExternalTrafficPolicy string                         `json:"externalTrafficPolicy"`
-		Ports                 []*KubernetesServiceSpecPort   `json:"ports"`
-		Selector              *KubernetesServiceSpecSelector `json:"selector"`
-		SessionAffinity       string                         `json:"sessionAffinity"`
-		Type                  string                         `json:"type"`
-	}
-
-	KubernetesServiceSpecSelector struct {
-		App string `json:"app"`
+		ClusterIP             string                       `json:"clusterIP"`
+		ExternalTrafficPolicy string                       `json:"externalTrafficPolicy"`
+		Ports                 []*KubernetesServiceSpecPort `json:"ports"`
+		Selector              map[string]string            `json:"selector"`
+		SessionAffinity       string                       `json:"sessionAffinity"`
+		Type                  string                       `json:"type"`
 	}
 
 	KubernetesServiceSpecPort struct {
