@@ -28,8 +28,8 @@ import (
 )
 
 var (
-	linuxIpRouteRegex  = regexp.MustCompile(`(?m)src\s+\b(?P<ip>(?:\d{1,3}\.){3}\d{1,3})\s+`)
-	darwinIpRouteRegex = regexp.MustCompile(`(?m)\s+gateway:\s+\b(?P<ip>(?:\d{1,3}\.){3}\d{1,3})\s+`)
+	linuxIPRouteRegex  = regexp.MustCompile(`(?m)src\s+\b(?P<ip>(?:\d{1,3}\.){3}\d{1,3})\s+`)
+	darwinIPRouteRegex = regexp.MustCompile(`(?m)\s+gateway:\s+\b(?P<ip>(?:\d{1,3}\.){3}\d{1,3})\s+`)
 )
 
 type DockerBuildOptions struct {
@@ -112,8 +112,8 @@ func (docker *Docker) Tag(ctx context.Context, oldImage, newImage string) error 
 	return stacktrace.Propagate(err, "Stderr: %s, Stdout: %s", stderr, stdout)
 }
 
-func (docker *Docker) Login(ctx context.Context, username, password, registryUrl string) error {
-	args := []string{"login", "-u", username, "-p", password, registryUrl}
+func (docker *Docker) Login(ctx context.Context, username, password, registryURL string) error {
+	args := []string{"login", "-u", username, "-p", password, registryURL}
 	stdout, stderr, err := docker.commandExecutor.ExecuteContext(ctx, "docker", args, nil, "")
 	return stacktrace.Propagate(err, "Stderr: %s, Stdout: %s", stderr, stdout)
 }
@@ -192,7 +192,7 @@ func (docker *Docker) NetworkGateway(ctx context.Context, name string) (string, 
 			return gatewayIP, nil
 		}
 
-		matches := linuxIpRouteRegex.FindAllStringSubmatch(string(stdout), -1)
+		matches := linuxIPRouteRegex.FindAllStringSubmatch(string(stdout), -1)
 		if len(matches) < 1 {
 			return gatewayIP, nil
 		}
@@ -214,7 +214,7 @@ func (docker *Docker) NetworkGateway(ctx context.Context, name string) (string, 
 			return gatewayIP, nil
 		}
 
-		matches := darwinIpRouteRegex.FindAllStringSubmatch(string(stdout), -1)
+		matches := darwinIPRouteRegex.FindAllStringSubmatch(string(stdout), -1)
 		if len(matches) < 1 {
 			return gatewayIP, nil
 		}

@@ -27,7 +27,6 @@ import (
 // RunCommandInSameProcess is a test helper function to test CLI in integration tests
 // by running in the same process and being able to mock/stub behavior.
 func RunCommandInSameProcess(cmd *cobra.Command, args []string, output io.Writer) (*cobra.Command, error) {
-
 	// NOTE: When https://github.com/spf13/cobra/pull/822 is merged
 	// use separate stdout and stderr. Also allow stdin
 	cmd.SetArgs(args)

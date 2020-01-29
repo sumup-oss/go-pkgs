@@ -51,7 +51,6 @@ func NewKubernetesClientSet(
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "failed to get in-cluster kubeconfig")
 		}
-
 	} else {
 		kubeconfig, err = clientcmd.BuildConfigFromFlags("", kubeconfigPath)
 		if err != nil {
