@@ -84,6 +84,62 @@ func (git *Git) CloneWithoutCheckout() error {
 	return nil
 }
 
+func (git *Git) CreateAndSwitchToBranch(name string) error {
+	_, stderr, err := git.commandExecutor.Execute(
+		git.binPath,
+		[]string{"-C", git.dir, "checkout", "-b", name},
+		git.env,
+		"",
+	)
+	if err != nil {
+		return fmt.Errorf("%s. Stderr: %s", err, stderr)
+	}
+
+	return nil
+}
+
+func (git *Git) SwitchToBranch(name string) error {
+	_, stderr, err := git.commandExecutor.Execute(
+		git.binPath,
+		[]string{"-C", git.dir, "checkout", name},
+		git.env,
+		"",
+	)
+	if err != nil {
+		return fmt.Errorf("%s. Stderr: %s", err, stderr)
+	}
+
+	return nil
+}
+
+func (git *Git) DeleteLocalBranch(name string) error {
+	_, stderr, err := git.commandExecutor.Execute(
+		git.binPath,
+		[]string{"-C", git.dir, "branch", "-D", name},
+		git.env,
+		"",
+	)
+	if err != nil {
+		return fmt.Errorf("%s. Stderr: %s", err, stderr)
+	}
+
+	return nil
+}
+
+func (git *Git) DeleteRemoteBranch(name string) error {
+	_, stderr, err := git.commandExecutor.Execute(
+		git.binPath,
+		[]string{"-C", git.dir, "push", "origin", "--delete", name},
+		git.env,
+		"",
+	)
+	if err != nil {
+		return fmt.Errorf("%s. Stderr: %s", err, stderr)
+	}
+
+	return nil
+}
+
 func (git *Git) HasDiff() (bool, error) {
 	output, stderr, err := git.commandExecutor.Execute(
 		git.binPath,
