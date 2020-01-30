@@ -15,6 +15,7 @@
 package executor
 
 import (
+	"github.com/elliotchance/orderedmap"
 	"path/filepath"
 	"testing"
 
@@ -43,9 +44,12 @@ func TestHelm_GetManifest_Integration(t *testing.T) {
 			locationArg := filepath.Join("testdata", "examplechart")
 			nameArg := "dashboard-backend"
 			namespaceArg := "default"
-			valuesArg := map[string]string{}
-			stringValuesArg := map[string]string{}
-			stringValuesArg["newRelic.excludedAttributes"] = "request.headers.cookie,request.headers.authorization,request.headers.proxyAuthorization,request.headers.setCookie*,request.headers.x*,response.headers.cookie,response.headers.authorization,response.headers.proxyAuthorization,response.headers.setCookie*,response.headers.x*"
+			valuesArg := orderedmap.NewOrderedMap()
+			stringValuesArg := orderedmap.NewOrderedMap()
+			stringValuesArg.Set(
+				"newRelic.excludedAttributes",
+				"request.headers.cookie,request.headers.authorization,request.headers.proxyAuthorization,request.headers.setCookie*,request.headers.x*,response.headers.cookie,response.headers.authorization,response.headers.proxyAuthorization,response.headers.setCookie*,response.headers.x*",
+			)
 
 			helmInstance := NewHelm(osExecutor)
 
@@ -81,10 +85,9 @@ func TestHelm_GetManifest_Integration(t *testing.T) {
 			locationArg := filepath.Join("testdata", "examplechart")
 			nameArg := "dashboard-backend"
 			namespaceArg := "default"
-			valuesArg := map[string]string{}
-			valuesArg["newRelic.excludedAttributes"] = "request"
-
-			stringValuesArg := map[string]string{}
+			valuesArg := orderedmap.NewOrderedMap()
+			valuesArg.Set("newRelic.excludedAttributes", "request")
+			stringValuesArg := orderedmap.NewOrderedMap()
 
 			helmInstance := NewHelm(osExecutor)
 
@@ -120,10 +123,13 @@ func TestHelm_GetManifest_Integration(t *testing.T) {
 			locationArg := filepath.Join("testdata", "examplechart")
 			nameArg := "dashboard-backend"
 			namespaceArg := "default"
-			valuesArg := map[string]string{}
-			valuesArg["newRelic.excludedAttributes"] = `{request.headers.cookie\,request.headers.authorization\,request.headers.proxyAuthorization\,request.headers.setCookie*\,request.headers.x*\,response.headers.cookie\,response.headers.authorization\,response.headers.proxyAuthorization\,response.headers.setCookie*\,response.headers.x*`
+			valuesArg := orderedmap.NewOrderedMap()
+			valuesArg.Set(
+				"newRelic.excludedAttributes",
+				`{request.headers.cookie\,request.headers.authorization\,request.headers.proxyAuthorization\,request.headers.setCookie*\,request.headers.x*\,response.headers.cookie\,response.headers.authorization\,response.headers.proxyAuthorization\,response.headers.setCookie*\,response.headers.x*`,
+			)
 
-			stringValuesArg := map[string]string{}
+			stringValuesArg := orderedmap.NewOrderedMap()
 
 			helmInstance := NewHelm(osExecutor)
 
@@ -158,10 +164,12 @@ func TestHelm_GetManifest_Integration(t *testing.T) {
 			locationArg := filepath.Join("testdata", "examplechart")
 			nameArg := "dashboard-backend"
 			namespaceArg := "default"
-			valuesArg := map[string]string{}
-			stringValuesArg := map[string]string{}
-			stringValuesArg["newRelic.excludedAttributes"] = `{request.headers.cookie\,request.headers.authorization\,request.headers.proxyAuthorization\,request.headers.setCookie*\,request.headers.x*\,response.headers.cookie\,response.headers.authorization\,response.headers.proxyAuthorization\,response.headers.setCookie*\,response.headers.x*}`
-
+			valuesArg := orderedmap.NewOrderedMap()
+			stringValuesArg := orderedmap.NewOrderedMap()
+			stringValuesArg.Set(
+				"newRelic.excludedAttributes",
+				`{request.headers.cookie\,request.headers.authorization\,request.headers.proxyAuthorization\,request.headers.setCookie*\,request.headers.x*\,response.headers.cookie\,response.headers.authorization\,response.headers.proxyAuthorization\,response.headers.setCookie*\,response.headers.x*}`,
+			)
 
 			helmInstance := NewHelm(osExecutor)
 

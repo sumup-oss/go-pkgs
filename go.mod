@@ -1,6 +1,7 @@
 module github.com/sumup-oss/go-pkgs
 
 require (
+	github.com/elliotchance/orderedmap v1.2.0
 	github.com/google/gofuzz v0.0.0-20170612174753-24818f796faf // indirect
 	github.com/googleapis/gnostic v0.2.0 // indirect
 	github.com/hashicorp/vault/api v1.0.1
@@ -17,13 +18,12 @@ require (
 	github.com/spf13/cobra v0.0.3
 	github.com/spf13/pflag v1.0.3 // indirect
 	github.com/stretchr/objx v0.2.0 // indirect
-	github.com/stretchr/testify v1.3.0
+	github.com/stretchr/testify v1.4.0
 	golang.org/x/crypto v0.0.0-20190418165655-df01cb2cc480
 	golang.org/x/net v0.0.0-20190419010253-1f3472d942ba // indirect
 	golang.org/x/oauth2 v0.0.0-20190402181905-9f3314589c9a // indirect
 	golang.org/x/sys v0.0.0-20190419153524-e8e3143a4f4a // indirect
 	gopkg.in/inf.v0 v0.9.0 // indirect
-	gopkg.in/yaml.v2 v2.2.1 // indirect
 	k8s.io/api v0.0.0-20190313235455-40a48860b5ab // indirect
 	k8s.io/apimachinery v0.0.0-20190313205120-d7deff9243b1
 	k8s.io/client-go v11.0.0+incompatible

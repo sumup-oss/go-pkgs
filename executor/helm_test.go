@@ -17,6 +17,7 @@ package executor
 import (
 	"errors"
 	"fmt"
+	"github.com/elliotchance/orderedmap"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -53,9 +54,9 @@ func TestHelm_GetManifest(t *testing.T) {
 			locationArg := "/tmp/example"
 			nameArg := "example"
 			namespaceArg := "default"
-			valuesArg := map[string]string{}
-			valuesArg["excludedAttributes"] = "request"
-			stringValuesArg := map[string]string{}
+			valuesArg := orderedmap.NewOrderedMap()
+			valuesArg.Set("excludedAttributes", "request")
+			stringValuesArg := orderedmap.NewOrderedMap()
 
 			helmInstance := NewHelm(osExecutor)
 
@@ -107,9 +108,12 @@ func TestHelm_GetManifest(t *testing.T) {
 			locationArg := "/tmp/example"
 			nameArg := "example"
 			namespaceArg := "default"
-			valuesArg := map[string]string{}
-			stringValuesArg := map[string]string{}
-			stringValuesArg["excludedAttributes"] = "request.headers.cookie,request.headers.authorization,request.headers.proxyAuthorization,request.headers.setCookie*,request.headers.x*,response.headers.cookie,response.headers.authorization,response.headers.proxyAuthorization,response.headers.setCookie*,response.headers.x*"
+			valuesArg := orderedmap.NewOrderedMap()
+			stringValuesArg := orderedmap.NewOrderedMap()
+			stringValuesArg.Set(
+				"excludedAttributes",
+				"request.headers.cookie,request.headers.authorization,request.headers.proxyAuthorization,request.headers.setCookie*,request.headers.x*,response.headers.cookie,response.headers.authorization,response.headers.proxyAuthorization,response.headers.setCookie*,response.headers.x*",
+			)
 
 			helmInstance := NewHelm(osExecutor)
 
@@ -161,10 +165,13 @@ func TestHelm_GetManifest(t *testing.T) {
 			locationArg := "/tmp/example"
 			nameArg := "example"
 			namespaceArg := "default"
-			valuesArg := map[string]string{}
-			stringValuesArg := map[string]string{}
-			stringValuesArg["excludedAttributes"] = "request.headers.cookie,request.headers.authorization,request.headers.proxyAuthorization,request.headers.setCookie*,request.headers.x*,response.headers.cookie,response.headers.authorization,response.headers.proxyAuthorization,response.headers.setCookie*,response.headers.x*"
-			stringValuesArg["someTest"] = "true"
+			valuesArg := orderedmap.NewOrderedMap()
+			stringValuesArg := orderedmap.NewOrderedMap()
+			stringValuesArg.Set(
+				"excludedAttributes",
+				"request.headers.cookie,request.headers.authorization,request.headers.proxyAuthorization,request.headers.setCookie*,request.headers.x*,response.headers.cookie,response.headers.authorization,response.headers.proxyAuthorization,response.headers.setCookie*,response.headers.x*",
+			)
+			stringValuesArg.Set("someTest", "true")
 
 			helmInstance := NewHelm(osExecutor)
 

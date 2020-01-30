@@ -18,6 +18,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/elliotchance/orderedmap"
+
 	"github.com/sumup-oss/go-pkgs/os"
 )
 
@@ -42,12 +44,13 @@ func (h *Helm) ResetExecutor(commandExecutor os.CommandExecutor) os.CommandExecu
 }
 
 // GetManifest returns content of a "helm template" substituted manifest.
+// Values and string values are maps of string keys to string values.
 func (h *Helm) GetManifest(
 	location string,
 	name string,
 	namespace string,
-	values map[string]string,
-	stringValues map[string]string,
+	values,
+	stringValues *orderedmap.OrderedMap,
 ) (string, error) {
 	cmdArgs := []string{
 		"template",
@@ -59,17 +62,27 @@ func (h *Helm) GetManifest(
 		namespace,
 	}
 
-	for key, value := range values {
+	for _, key := range values.Keys() {
+		value, _ := values.Get(key)
+		if value == nil {
+			continue
+		}
+
 		cmdArgs = append(
 			cmdArgs,
-			h.prepareSetArgument(key, value, false)...,
+			h.prepareSetArgument(key.(string), value.(string), false)...,
 		)
 	}
 
-	for key, value := range stringValues {
+	for _, key := range stringValues.Keys() {
+		value, _ := stringValues.Get(key)
+		if value == nil {
+			continue
+		}
+
 		cmdArgs = append(
 			cmdArgs,
-			h.prepareSetArgument(key, value, true)...,
+			h.prepareSetArgument(key.(string), value.(string), true)...,
 		)
 	}
 
