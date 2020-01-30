@@ -15,6 +15,7 @@
 package executor
 
 import (
+	"context"
 	"fmt"
 	"io/ioutil"
 	"path"
@@ -77,6 +78,66 @@ func (git *Git) CloneWithoutCheckout() error {
 		"",
 	)
 
+	if err != nil {
+		return fmt.Errorf("%s. Stderr: %s", err, stderr)
+	}
+
+	return nil
+}
+
+func (git *Git) CreateAndSwitchToBranch(ctx context.Context, name string) error {
+	_, stderr, err := git.commandExecutor.ExecuteContext(
+		ctx,
+		git.binPath,
+		[]string{"-C", git.dir, "checkout", "-b", name},
+		git.env,
+		"",
+	)
+	if err != nil {
+		return fmt.Errorf("%s. Stderr: %s", err, stderr)
+	}
+
+	return nil
+}
+
+func (git *Git) SwitchToBranch(ctx context.Context, name string) error {
+	_, stderr, err := git.commandExecutor.ExecuteContext(
+		ctx,
+		git.binPath,
+		[]string{"-C", git.dir, "checkout", name},
+		git.env,
+		"",
+	)
+	if err != nil {
+		return fmt.Errorf("%s. Stderr: %s", err, stderr)
+	}
+
+	return nil
+}
+
+func (git *Git) DeleteLocalBranch(ctx context.Context, name string) error {
+	_, stderr, err := git.commandExecutor.ExecuteContext(
+		ctx,
+		git.binPath,
+		[]string{"-C", git.dir, "branch", "-D", name},
+		git.env,
+		"",
+	)
+	if err != nil {
+		return fmt.Errorf("%s. Stderr: %s", err, stderr)
+	}
+
+	return nil
+}
+
+func (git *Git) DeleteRemoteBranch(ctx context.Context, name string) error {
+	_, stderr, err := git.commandExecutor.ExecuteContext(
+		ctx,
+		git.binPath,
+		[]string{"-C", git.dir, "push", "origin", "--delete", name},
+		git.env,
+		"",
+	)
 	if err != nil {
 		return fmt.Errorf("%s. Stderr: %s", err, stderr)
 	}

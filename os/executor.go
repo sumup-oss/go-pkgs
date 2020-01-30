@@ -410,7 +410,6 @@ func (ex *RealOsExecutor) CopyDir(src, dst string) error {
 				)
 			}
 		}
-
 	}
 
 	return nil

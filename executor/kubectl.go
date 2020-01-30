@@ -76,10 +76,10 @@ type (
 
 	KubernetesServiceSpecPort struct {
 		Name       string      `json:"name"`
-		NodePort   json.Number `json:"nodePort,Number"`
-		Port       json.Number `json:"port,Number"`
+		NodePort   json.Number `json:"nodePort"`
+		Port       json.Number `json:"port"`
 		Protocol   string      `json:"protocol"`
-		TargetPort json.Number `json:"targetPort,Number"`
+		TargetPort json.Number `json:"targetPort"`
 	}
 
 	KubernetesIngressesResponse struct {
