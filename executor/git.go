@@ -189,14 +189,12 @@ func (git *Git) Commit(message string) error {
 	return nil
 }
 
-func (git *Git) Push(destination string, force bool) error {
-	forceArg := ""
-
-	if force {
-		forceArg = "--force"
+func (git *Git) Push(destination string, isForce bool) error {
+	args := []string{"-C", git.dir, "push"}
+	if isForce {
+		args = append(args, "--force")
 	}
 
-	args := []string{"-C", git.dir, "push", forceArg}
 	args = append(args, strings.Split(destination, " ")...)
 
 	_, stderr, err := git.commandExecutor.Execute(
