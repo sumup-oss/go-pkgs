@@ -189,14 +189,12 @@ func (git *Git) Commit(message string) error {
 	return nil
 }
 
-func (git *Git) Push(destination string, force bool) error {
-	forceArg := ""
-
-	if force {
-		forceArg = "--force"
+func (git *Git) Push(destination string, isForce bool) error {
+	args := []string{"-C", git.dir, "push"}
+	if isForce {
+		args = append(args, "--force")
 	}
 
-	args := []string{"-C", git.dir, "push", forceArg}
 	args = append(args, strings.Split(destination, " ")...)
 
 	_, stderr, err := git.commandExecutor.Execute(
@@ -435,4 +433,19 @@ func (git *Git) GetCurrentHashForPath(path string) (string, error) {
 	}
 
 	return strings.Trim(stdoutParts[0], "\n\r "), nil
+}
+
+func (git *Git) Config(ctx context.Context, key, value string) error {
+	_, stderr, err := git.commandExecutor.ExecuteContext(
+		ctx,
+		git.binPath,
+		[]string{"-C", git.dir, "config", key, value},
+		git.env,
+		"",
+	)
+	if err != nil {
+		return fmt.Errorf("%s. Stderr: %s", err, stderr)
+	}
+
+	return nil
 }
