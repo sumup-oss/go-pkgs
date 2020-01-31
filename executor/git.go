@@ -436,3 +436,18 @@ func (git *Git) GetCurrentHashForPath(path string) (string, error) {
 
 	return strings.Trim(stdoutParts[0], "\n\r "), nil
 }
+
+func (git *Git) Config(ctx context.Context, key, value string) error {
+	_, stderr, err := git.commandExecutor.ExecuteContext(
+		ctx,
+		git.binPath,
+		[]string{"-C", git.dir, "config", key, value},
+		git.env,
+		"",
+	)
+	if err != nil {
+		return fmt.Errorf("%s. Stderr: %s", err, stderr)
+	}
+
+	return nil
+}
