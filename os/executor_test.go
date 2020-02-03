@@ -18,6 +18,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"os/exec"
 	"os/user"
@@ -39,6 +40,9 @@ func TestRealOsExecutor_Chdir(t *testing.T) {
 			calledDirArgument = dir
 			return calledErr
 		}
+		defer func() {
+			osChdir = os.Chdir
+		}()
 
 		dirArgument := "/tmp/example"
 		osExecutor := &RealOsExecutor{}
@@ -61,6 +65,9 @@ func TestRealOsExecutor_Getwd(t *testing.T) {
 			called = true
 			return calledDirArgument, calledErr
 		}
+		defer func() {
+			osGetwd = os.Getwd
+		}()
 
 		osExecutor := &RealOsExecutor{}
 
@@ -84,6 +91,9 @@ func TestRealOsExecutor_Mkdir(t *testing.T) {
 			calledPerm = perm
 			return nil
 		}
+		defer func() {
+			osMkdir = os.Mkdir
+		}()
 
 		osExecutor := &RealOsExecutor{}
 
@@ -111,6 +121,9 @@ func TestRealOsExecutor_MkdirAll(t *testing.T) {
 			calledPerm = perm
 			return nil
 		}
+		defer func() {
+			osMkdirAll = os.MkdirAll
+		}()
 
 		osExecutor := &RealOsExecutor{}
 
@@ -135,6 +148,9 @@ func TestRealOsExecutor_Exit(t *testing.T) {
 			called = true
 			calledStatusCode = statusCode
 		}
+		defer func() {
+			osExit = os.Exit
+		}()
 
 		osExecutor := &RealOsExecutor{}
 
@@ -199,6 +215,9 @@ func TestRealOsExecutor_Stat(t *testing.T) {
 			calledFilename = filename
 			return nil, nil
 		}
+		defer func() {
+			osStat = os.Stat
+		}()
 
 		osExecutor := &RealOsExecutor{}
 
@@ -223,6 +242,9 @@ func TestRealOsExecutor_IsNotExist(t *testing.T) {
 			calledErr = err
 			return calledReturn
 		}
+		defer func() {
+			osIsNotExist = os.IsNotExist
+		}()
 
 		osExecutor := &RealOsExecutor{}
 
@@ -251,6 +273,9 @@ func TestRealOsExecutor_OpenFile(t *testing.T) {
 			calledPerm = perm
 			return calledReturnOsFile, calledReturnErr
 		}
+		defer func() {
+			osOpenfile = os.OpenFile
+		}()
 
 		osExecutor := &RealOsExecutor{}
 
@@ -284,6 +309,9 @@ func TestRealOsExecutor_WriteFile(t *testing.T) {
 			calledPerm = perm
 			return calledReturnErr
 		}
+		defer func() {
+			ioutilWriteFile = ioutil.WriteFile
+		}()
 
 		osExecutor := &RealOsExecutor{}
 
@@ -352,6 +380,9 @@ func TestRealOsExecutor_Getenv(t *testing.T) {
 
 				return calledReturn
 			}
+			defer func() {
+				osGetenv = os.Getenv
+			}()
 
 			osExecutor := &RealOsExecutor{}
 			actualEnv := osExecutor.Getenv(keyArg)
@@ -391,6 +422,9 @@ func TestRealOsExecutor_Remove(t *testing.T) {
 				return calledReturnError
 
 			}
+			defer func() {
+				osRemove = os.Remove
+			}()
 
 			nameArg := "example"
 
@@ -417,8 +451,10 @@ func TestRealOsExecutor_Create(t *testing.T) {
 				called = true
 				calledNameArg = name
 				return calledOsFileInfo, calledReturnError
-
 			}
+			defer func() {
+				osCreate = os.Create
+			}()
 
 			nameArg := "example"
 
@@ -447,6 +483,9 @@ func TestRealOsExecutor_ReadFile(t *testing.T) {
 				calledFilenameArg = filename
 				return calledBytes, calledReturnError
 			}
+			defer func() {
+				ioutilReadFile = ioutil.ReadFile
+			}()
 
 			filenameArg := "example"
 
@@ -471,6 +510,9 @@ func TestRealOsExecutor_CurrentUser(t *testing.T) {
 			called = true
 			return fakeUser, calledErr
 		}
+		defer func() {
+			userCurrent = user.Current
+		}()
 
 		osExecutor := &RealOsExecutor{}
 
@@ -498,6 +540,9 @@ func TestRealOsExecutor_ExecuteWithStreams(t *testing.T) {
 				calledArgs = arg
 				return fakeCmd
 			}
+			defer func() {
+				execCommand = exec.Command
+			}()
 
 			osExecutor := &RealOsExecutor{}
 
@@ -543,6 +588,9 @@ func TestRealOsExecutor_ExecuteWithStreams(t *testing.T) {
 				calledArgs = arg
 				return fakeCmd
 			}
+			defer func() {
+				execCommand = exec.Command
+			}()
 
 			osExecutor := &RealOsExecutor{}
 
@@ -591,6 +639,9 @@ func TestRealOsExecutor_Execute(t *testing.T) {
 				calledArgs = arg
 				return fakeCmd
 			}
+			defer func() {
+				execCommand = exec.Command
+			}()
 
 			osExecutor := &RealOsExecutor{}
 
@@ -635,6 +686,9 @@ func TestRealOsExecutor_Execute(t *testing.T) {
 				calledArgs = arg
 				return fakeCmd
 			}
+			defer func() {
+				execCommand = exec.Command
+			}()
 
 			osExecutor := &RealOsExecutor{}
 
@@ -675,6 +729,9 @@ func TestRealOsExecutor_RemoveAll(t *testing.T) {
 			calledPathArgument = path
 			return calledErr
 		}
+		defer func() {
+			osRemoveAll = os.RemoveAll
+		}()
 
 		pathArgument := "/tmp/example"
 		osExecutor := &RealOsExecutor{}
@@ -701,6 +758,9 @@ func TestRealOsExecutor_TempDir(t *testing.T) {
 			calledPrefix = prefix
 			return fakeString, fakeErr
 		}
+		defer func() {
+			ioutilTempDir = ioutil.TempDir
+		}()
 
 		osExecutor := &RealOsExecutor{}
 
@@ -732,6 +792,9 @@ func TestRealOsExecutor_TempFile(t *testing.T) {
 			calledPattern = pattern
 			return fakeFile, fakeErr
 		}
+		defer func() {
+			ioutilTempFile = ioutil.TempFile
+		}()
 
 		osExecutor := &RealOsExecutor{}
 
@@ -761,6 +824,9 @@ func TestRealOsExecutor_ReadDir(t *testing.T) {
 			calledDirname = dirname
 			return fakeInfos, fakeErr
 		}
+		defer func() {
+			ioutilReadDir = ioutil.ReadDir
+		}()
 
 		osExecutor := &RealOsExecutor{}
 
