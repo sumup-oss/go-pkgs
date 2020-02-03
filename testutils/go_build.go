@@ -6,8 +6,8 @@ import (
 	stdOs "os"
 	"os/exec"
 	"runtime"
-	"testing"
 
+	log "github.com/sumup-oss/go-pkgs/logger"
 	"github.com/sumup-oss/go-pkgs/os"
 )
 
@@ -49,23 +49,23 @@ func (b *Build) Run(args ...string) (string, string, error) {
 	return stdoutBuffer.String(), stdErrBuffer.String(), err
 }
 
-func GoBuild(t *testing.T, binaryPattern string, pkgPath string, osExecutor os.OsExecutor) string {
+func GoBuild(binaryPattern, pkgPath string, osExecutor os.OsExecutor) string {
 	tmpFile, err := ioutil.TempFile("", binaryPattern)
 	if err != nil {
-		t.Fatal(err)
+		log.Fatal(err)
 	}
 
 	tmpFilename := tmpFile.Name()
 
 	err = tmpFile.Close()
 	if err != nil {
-		t.Fatal(err)
+		log.Fatal(err)
 	}
 
 	// NOTE: On windows the temp file created in the previous step cannot be overwritten
 	err = osExecutor.Remove(tmpFilename)
 	if err != nil {
-		t.Fatal(err)
+		log.Fatal(err)
 	}
 
 	if runtime.GOOS == "windows" {
@@ -87,7 +87,7 @@ func GoBuild(t *testing.T, binaryPattern string, pkgPath string, osExecutor os.O
 
 	err = cmd.Run()
 	if err != nil {
-		t.Fatalf("failed to build executable: %s", err)
+		log.Fatalf("failed to build executable: %s", err)
 	}
 
 	return tmpFilename
