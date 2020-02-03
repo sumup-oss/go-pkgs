@@ -12,23 +12,26 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package os
+package os_test
 
 import (
-	"github.com/mattes/go-expand-tilde"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
-	"github.com/sumup-oss/go-pkgs/testutils"
 	"path/filepath"
 	"runtime"
 	"testing"
+
+	tilde "github.com/mattes/go-expand-tilde"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
+	pkgos "github.com/sumup-oss/go-pkgs/os"
+	"github.com/sumup-oss/go-pkgs/testutils"
 )
 
 func TestRealOsExecutor_ResolvePath(t *testing.T) {
 	t.Run(
 		"with path containing `~`, it returns expanded absolute path",
 		func(t *testing.T) {
-			osExecutor := &RealOsExecutor{}
+			osExecutor := &pkgos.RealOsExecutor{}
 
 			pathArg := filepath.Join("~", "mypath")
 
@@ -50,7 +53,7 @@ func TestRealOsExecutor_ResolvePath(t *testing.T) {
 				t.Skip("Not supported OS")
 			}
 
-			osExecutor := &RealOsExecutor{}
+			osExecutor := &pkgos.RealOsExecutor{}
 
 			pathArg := "/home/example/mypath"
 
@@ -69,7 +72,7 @@ func TestRealOsExecutor_ResolvePath(t *testing.T) {
 				t.Skip("Not supported OS")
 			}
 
-			osExecutor := &RealOsExecutor{}
+			osExecutor := &pkgos.RealOsExecutor{}
 
 			pathArg := filepath.Join(`C:\\`, "example", "mypath")
 
@@ -85,7 +88,7 @@ func TestRealOsExecutor_IsFile(t *testing.T) {
 	t.Run(
 		"with path that is a dir, it returns error",
 		func(t *testing.T) {
-			osExecutor := &RealOsExecutor{}
+			osExecutor := &pkgos.RealOsExecutor{}
 
 			testDir := testutils.TestCwd(t, "os-executor")
 			pathArg := filepath.Join(testDir, "dir")
@@ -102,7 +105,7 @@ func TestRealOsExecutor_IsFile(t *testing.T) {
 	t.Run(
 		"with path that is a file, it returns nil",
 		func(t *testing.T) {
-			osExecutor := &RealOsExecutor{}
+			osExecutor := &pkgos.RealOsExecutor{}
 
 			testDir := testutils.TestCwd(t, "os-executor")
 			pathArg := filepath.Join(testDir, "dir")
@@ -120,7 +123,7 @@ func TestRealOsExecutor_IsDir(t *testing.T) {
 	t.Run(
 		"with path that is a file it returns error",
 		func(t *testing.T) {
-			osExecutor := &RealOsExecutor{}
+			osExecutor := &pkgos.RealOsExecutor{}
 
 			testDir := testutils.TestCwd(t, "os-executor")
 			pathArg := filepath.Join(testDir, "dir")
@@ -137,7 +140,7 @@ func TestRealOsExecutor_IsDir(t *testing.T) {
 	t.Run(
 		"with path that is a dir, it returns nil",
 		func(t *testing.T) {
-			osExecutor := &RealOsExecutor{}
+			osExecutor := &pkgos.RealOsExecutor{}
 
 			testDir := testutils.TestCwd(t, "os-executor")
 			pathArg := filepath.Join(testDir, "dir")
@@ -155,9 +158,7 @@ func TestRealOsExecutor_CopyFile(t *testing.T) {
 	t.Run(
 		"when src file is not existing, it fails and return error",
 		func(t *testing.T) {
-			t.Parallel()
-
-			osExecutor := &RealOsExecutor{}
+			osExecutor := &pkgos.RealOsExecutor{}
 
 			srcArg := "/tmp/NOTexistingEXAmpleCopyFile"
 			err := osExecutor.CopyFile(srcArg, "/tmp/example1234Notexisting")
@@ -168,9 +169,7 @@ func TestRealOsExecutor_CopyFile(t *testing.T) {
 	t.Run(
 		"when src file is existing, but dst is also existing, it overwrites the dst and writes src",
 		func(t *testing.T) {
-			t.Parallel()
-
-			osExecutor := &RealOsExecutor{}
+			osExecutor := &pkgos.RealOsExecutor{}
 
 			srcFd, err := osExecutor.TempFile("", "")
 			require.Nil(t, err, "failed to create temporary file")
@@ -200,9 +199,7 @@ func TestRealOsExecutor_CopyDir(t *testing.T) {
 	t.Run(
 		"when src dir is not existing, it fails and return error",
 		func(t *testing.T) {
-			t.Parallel()
-
-			osExecutor := &RealOsExecutor{}
+			osExecutor := &pkgos.RealOsExecutor{}
 
 			srcArg := "/tmp/notExistingDir1TestOsExecutor"
 			err := osExecutor.CopyDir(srcArg, "/tmp/example1234Notexisting")
@@ -213,9 +210,7 @@ func TestRealOsExecutor_CopyDir(t *testing.T) {
 	t.Run(
 		"when src dir is existing, but dst is also existing, it overwrites the dst and writes src",
 		func(t *testing.T) {
-			t.Parallel()
-
-			osExecutor := &RealOsExecutor{}
+			osExecutor := &pkgos.RealOsExecutor{}
 
 			srcArg, err := osExecutor.TempDir("", "")
 			require.Nil(t, err, "failed to create temporary dir")
@@ -245,9 +240,7 @@ func TestRealOsExecutor_RemoveContents(t *testing.T) {
 	t.Run(
 		"when dir is empty, it does not delete the dir",
 		func(t *testing.T) {
-			t.Parallel()
-
-			osExecutor := &RealOsExecutor{}
+			osExecutor := &pkgos.RealOsExecutor{}
 
 			pathArg, err := osExecutor.TempDir("", "")
 			require.Nil(t, err, "failed to create temporary dir")
@@ -264,9 +257,7 @@ func TestRealOsExecutor_RemoveContents(t *testing.T) {
 		"when dir contains nested files and dirs, it does not delete the dir and deletes all files and"+
 			" dirs inside",
 		func(t *testing.T) {
-			t.Parallel()
-
-			osExecutor := &RealOsExecutor{}
+			osExecutor := &pkgos.RealOsExecutor{}
 
 			pathArg, err := osExecutor.TempDir("", "")
 			require.Nil(t, err, "failed to create temporary dir")
