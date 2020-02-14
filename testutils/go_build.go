@@ -2,6 +2,7 @@ package testutils
 
 import (
 	"bytes"
+	"context"
 	"io/ioutil"
 	stdOs "os"
 	"os/exec"
@@ -23,9 +24,9 @@ func NewBuild(binaryPath, workDir string) *Build {
 	}
 }
 
-func (b *Build) cmd(args ...string) *exec.Cmd {
+func (b *Build) cmd(ctx context.Context, args ...string) *exec.Cmd {
 	//nolint:gosec
-	cmd := exec.Command(b.binaryPath, args...)
+	cmd := exec.CommandContext(ctx, b.binaryPath, args...)
 	cmd.Dir = b.workDir
 
 	// NOTE: Inherit environment of the host/container running the binary,
@@ -35,8 +36,8 @@ func (b *Build) cmd(args ...string) *exec.Cmd {
 	return cmd
 }
 
-func (b *Build) Run(args ...string) (string, string, error) {
-	cmdInstance := b.cmd(args...)
+func (b *Build) Run(ctx context.Context, args ...string) (string, string, error) {
+	cmdInstance := b.cmd(ctx, args...)
 
 	var stdoutBuffer bytes.Buffer
 	var stdErrBuffer bytes.Buffer
@@ -50,7 +51,7 @@ func (b *Build) Run(args ...string) (string, string, error) {
 	return stdoutBuffer.String(), stdErrBuffer.String(), err
 }
 
-func GoBuild(binaryPattern, pkgPath string, osExecutor os.OsExecutor) string {
+func GoBuild(ctx context.Context, binaryPattern, pkgPath string, osExecutor os.OsExecutor) string {
 	tmpFile, err := ioutil.TempFile("", binaryPattern)
 	if err != nil {
 		log.Fatal(err)
@@ -73,7 +74,8 @@ func GoBuild(binaryPattern, pkgPath string, osExecutor os.OsExecutor) string {
 		tmpFilename += ".exe"
 	}
 
-	cmd := exec.Command(
+	cmd := exec.CommandContext(
+		ctx,
 		"go",
 		"build",
 		"-v",

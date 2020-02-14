@@ -1,6 +1,6 @@
 # go-pkgs
 
-[![Build Status](https://travis-ci.org/sumup-oss/go-pkgs.svg?branch=master)](https://travis-ci.org/sumup-oss/go-pkgs)
+![Go](https://github.com/sumup-oss/go-pkgs/workflows/Go/badge.svg?branch=master&event=push)
 
 Generic and easy to use packages for common functionality.
 
