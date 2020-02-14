@@ -24,6 +24,7 @@ func NewBuild(binaryPath, workDir string) *Build {
 }
 
 func (b *Build) cmd(args ...string) *exec.Cmd {
+	//nolint:gosec
 	cmd := exec.Command(b.binaryPath, args...)
 	cmd.Dir = b.workDir
 

@@ -190,7 +190,8 @@ func (s *FakeGitServer) CreateRemoteGitRepo(privKeyPath, username, repositoryNam
 }
 
 func (s *FakeGitServer) CloneRemoteGitRepo(gitEnv map[string]string) (string, error) {
-	cmd := exec.Command("git", []string{"clone", gitEnv["GIT_REPOSITORY_URL"], gitEnv["GIT_WORK_DIR"]}...)
+	// nolint:gosec
+	cmd := exec.Command("git", "clone", gitEnv["GIT_REPOSITORY_URL"], gitEnv["GIT_WORK_DIR"])
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	cmd.Env = GitEnvToArray(gitEnv)
@@ -276,6 +277,7 @@ func (s *FakeGitServer) AddDirToGitRepo(
 
 	gitEnvArray := GitEnvToArray(gitEnv)
 
+	//nolint:gosec
 	cmd := exec.Command("git", "-C", gitEnv["GIT_WORK_DIR"], "add", ".")
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
@@ -285,6 +287,7 @@ func (s *FakeGitServer) AddDirToGitRepo(
 		return stacktrace.Propagate(err, "failed to git add files")
 	}
 
+	//nolint:gosec
 	cmd = exec.Command(
 		"git",
 		"-C",
@@ -305,6 +308,7 @@ func (s *FakeGitServer) AddDirToGitRepo(
 		return stacktrace.Propagate(err, "failed to git commit files")
 	}
 
+	//nolint:gosec
 	cmd = exec.Command("git", "-C", gitEnv["GIT_WORK_DIR"], "push")
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
@@ -331,6 +335,7 @@ func (s *FakeGitServer) AddFilesToGitRepo(gitEnv map[string]string, files map[st
 
 	gitEnvArray := GitEnvToArray(gitEnv)
 
+	//nolint:gosec
 	cmd := exec.Command("git", "-C", gitEnv["GIT_WORK_DIR"], "add", ".")
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
@@ -340,6 +345,7 @@ func (s *FakeGitServer) AddFilesToGitRepo(gitEnv map[string]string, files map[st
 		return stacktrace.Propagate(err, "failed to git add files")
 	}
 
+	//nolint:gosec
 	cmd = exec.Command(
 		"git",
 		"-C",
@@ -360,6 +366,7 @@ func (s *FakeGitServer) AddFilesToGitRepo(gitEnv map[string]string, files map[st
 		return stacktrace.Propagate(err, "failed to git commit files")
 	}
 
+	//nolint:gosec
 	cmd = exec.Command("git", "-C", gitEnv["GIT_WORK_DIR"], "push")
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
@@ -405,6 +412,7 @@ func (s *FakeGitServer) PrepareGitServerWithArgs() error {
 	//nolint:errcheck
 	s.StopGitServer()
 
+	//nolint:gosec
 	cmd := exec.Command("docker", "run",
 		"-p",
 		fmt.Sprintf("%s:%d:22/tcp", s.Host, s.Port),
@@ -445,6 +453,7 @@ func (s *FakeGitServer) PrepareGitServerWithArgs() error {
 
 func (s *FakeGitServer) StopGitServer() error {
 	// NOTE: Ignore error since we clean optimistically
+	//nolint:gosec
 	cmd := exec.Command("docker", "rm", "-fv", s.dockerContainerName)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr

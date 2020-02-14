@@ -19,8 +19,9 @@ require (
 	github.com/spf13/pflag v1.0.3 // indirect
 	github.com/stretchr/objx v0.2.0 // indirect
 	github.com/stretchr/testify v1.4.0
-	golang.org/x/crypto v0.0.0-20190418165655-df01cb2cc480
-	golang.org/x/net v0.0.0-20190419010253-1f3472d942ba // indirect
+	github.com/tchap/zapext v0.0.0-20180117141735-e61c0c882339
+	go.uber.org/zap v1.13.0
+	golang.org/x/crypto v0.0.0-20190510104115-cbcb75029529
 	golang.org/x/oauth2 v0.0.0-20190402181905-9f3314589c9a // indirect
 	golang.org/x/sys v0.0.0-20190419153524-e8e3143a4f4a // indirect
 	gopkg.in/inf.v0 v0.9.0 // indirect

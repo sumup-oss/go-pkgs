@@ -45,6 +45,7 @@ func RunCommandInSubprocess(t *testing.T, args ...string) *exec.Cmd {
 	}
 	cmdArgs = append(cmdArgs, args...)
 
+	//nolint:gosec
 	cmd := exec.Command(os.Args[0], cmdArgs...)
 	cmd.Env = []string{
 		"GO_WANT_HELPER_PROCESS=1",

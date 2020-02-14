@@ -60,6 +60,12 @@ linters:
     - unparam
     # NOTE: It's a great linter, but gets in the way too often by not being customizable.
     - gochecknoglobals
+    # NOTE: It considers too much things as magic numbers.
+    - gomnd
+    # NOTE: False positives.
+    - wsl
+    # NOTE: Pointless.
+    - funlen
 issues:
   exclude-rules:
     - text: "weak cryptographic primitive"
