@@ -39,14 +39,14 @@ func NewTestTask(stopError error) *TestTask {
 	}
 }
 
-func (p *TestTask) Run(cancel <-chan struct{}) error {
+func (p *TestTask) Run(ctx context.Context) error {
 	p.RunCount++
 	close(p.RunReady)
 
 	select {
 	case err := <-p.RunUntil:
 		return err
-	case <-cancel:
+	case <-ctx.Done():
 		p.StopCount++
 		return nil
 	}

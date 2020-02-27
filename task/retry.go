@@ -15,6 +15,7 @@
 package task
 
 import (
+	"context"
 	"fmt"
 	"time"
 )
@@ -55,16 +56,16 @@ func NewRetryableError(err error) error {
 // returns true.
 // The retryInterval specify how much time to wait between every retry.
 func Retry(retryInterval time.Duration, retryFunc TaskFunc) TaskFunc {
-	return func(cancel <-chan struct{}) error {
+	return func(ctx context.Context) error {
 		for {
-			err := retryFunc(cancel)
+			err := retryFunc(ctx)
 			if !IsRetryableError(err) {
 				return err
 			}
 
 			retryTimer := time.NewTimer(retryInterval)
 			select {
-			case <-cancel:
+			case <-ctx.Done():
 				retryTimer.Stop()
 				return nil
 			case <-retryTimer.C:
@@ -107,7 +108,7 @@ func (err *MaxRetryExceedError) Cause() error {
 // NOTE: when the cancel channel is closed, RetryUntil will not return an error, even if
 // the retryFunc had failed couple of times so far.
 func RetryUntil(maxAttempts int, retryInterval time.Duration, retryFunc TaskFunc) TaskFunc {
-	return func(cancel <-chan struct{}) error {
+	return func(ctx context.Context) error {
 		var err error
 		attempts := maxAttempts
 
@@ -116,7 +117,7 @@ func RetryUntil(maxAttempts int, retryInterval time.Duration, retryFunc TaskFunc
 				return NewMaxRetryError(maxAttempts, err)
 			}
 
-			err = retryFunc(cancel)
+			err = retryFunc(ctx)
 			if !IsRetryableError(err) {
 				return err
 			}
@@ -125,7 +126,7 @@ func RetryUntil(maxAttempts int, retryInterval time.Duration, retryFunc TaskFunc
 
 			retryTimer := time.NewTimer(retryInterval)
 			select {
-			case <-cancel:
+			case <-ctx.Done():
 				retryTimer.Stop()
 				return nil
 			case <-retryTimer.C:
@@ -174,13 +175,14 @@ func RetryWithDeadline(
 	retryInterval time.Duration,
 	retryFunc TaskFunc,
 ) TaskFunc {
-	return func(cancel <-chan struct{}) error {
+	return func(ctx context.Context) error {
 		// when the task is complete or fails with non retryable error, doneChan is closed
 		// for signaling the deadline monitoring to stop
 		doneChan := make(chan struct{})
-		// when the external cancel signal is triggered or the deadline is exceeded taskCancelChan
-		// is closed for signaling the task and retryTimer to cancel
-		taskCancelChan := make(chan struct{})
+		// when the external context is canceled or the deadline is exceeded retryCtx
+		// is canceled for signaling the task and retryTimer to cancel.
+		retryCtx, cancel := context.WithCancel(ctx)
+		defer cancel()
 
 		var err error
 		var lastErr error // last non-nil error
@@ -188,7 +190,7 @@ func RetryWithDeadline(
 			defer close(doneChan)
 
 			for {
-				err = retryFunc(taskCancelChan)
+				err = retryFunc(retryCtx)
 				if err != nil {
 					lastErr = err
 				}
@@ -198,7 +200,7 @@ func RetryWithDeadline(
 
 				retryTimer := time.NewTimer(retryInterval)
 				select {
-				case <-taskCancelChan:
+				case <-retryCtx.Done():
 					retryTimer.Stop()
 					err = nil
 					return
@@ -213,12 +215,8 @@ func RetryWithDeadline(
 		select {
 		case <-doneChan:
 			return err
-		case <-cancel:
-			close(taskCancelChan)
-			<-doneChan
-			return err
 		case <-deadlineTimer.C:
-			close(taskCancelChan)
+			cancel()
 			<-doneChan
 			return NewDeadlineError(timeoutDeadline, lastErr)
 		}

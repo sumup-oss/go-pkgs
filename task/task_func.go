@@ -14,8 +14,10 @@
 
 package task
 
+import "context"
+
 // TaskFunc specify the functions that are run by the task group.
-type TaskFunc func(cancel <-chan struct{}) error
+type TaskFunc func(ctx context.Context) error
 
 type TaskFuncDecorator func(fn TaskFunc) TaskFunc
 

@@ -15,12 +15,14 @@
 package task_test
 
 import (
+	"context"
 	"errors"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
 	"github.com/sumup-oss/go-pkgs/task"
 )
 
@@ -51,8 +53,7 @@ func TestRetry(t *testing.T) {
 
 		cnt := 0
 		pace := make(chan error, 10)
-		cancel := make(chan struct{})
-		repeat := task.Retry(1, func(cancel <-chan struct{}) error {
+		repeat := task.Retry(1, func(ctx context.Context) error {
 			cnt++
 			return <-pace
 		})
@@ -62,7 +63,7 @@ func TestRetry(t *testing.T) {
 		pace <- nil
 		pace <- task.NewRetryableError(errors.New("bazErr"))
 
-		err := repeat(cancel)
+		err := repeat(context.Background())
 
 		assert.NoError(t, err)
 		assert.Equal(t, 3, cnt)
@@ -73,8 +74,7 @@ func TestRetry(t *testing.T) {
 
 		cnt := 0
 		pace := make(chan error, 10)
-		cancel := make(chan struct{})
-		repeat := task.Retry(1, func(cancel <-chan struct{}) error {
+		repeat := task.Retry(1, func(ctx context.Context) error {
 			cnt++
 			return <-pace
 		})
@@ -83,7 +83,7 @@ func TestRetry(t *testing.T) {
 		pace <- task.NewRetryableError(errors.New("barErr"))
 		pace <- errors.New("bazErr")
 
-		err := repeat(cancel)
+		err := repeat(context.Background())
 
 		assert.EqualError(t, err, "bazErr")
 		assert.Equal(t, 3, cnt)
@@ -94,19 +94,19 @@ func TestRetry(t *testing.T) {
 
 		cnt := 0
 		pace := make(chan error, 10)
-		cancel := make(chan struct{})
-		repeat := task.Retry(time.Hour, func(cancel <-chan struct{}) error {
+		repeat := task.Retry(time.Hour, func(ctx context.Context) error {
 			cnt++
 			return <-pace
 		})
 
 		pace <- task.NewRetryableError(errors.New("fooErr"))
 
+		ctx, cancel := context.WithCancel(context.Background())
 		go func() {
-			close(cancel)
+			cancel()
 		}()
 
-		err := repeat(cancel)
+		err := repeat(ctx)
 		assert.NoError(t, err)
 		assert.Equal(t, 1, cnt)
 	})
@@ -120,8 +120,7 @@ func TestRetryUntil(t *testing.T) {
 
 			cnt := 0
 			pace := make(chan error, 10)
-			cancel := make(chan struct{})
-			repeat := task.RetryUntil(10, 1, func(cancel <-chan struct{}) error {
+			repeat := task.RetryUntil(10, 1, func(ctx context.Context) error {
 				cnt++
 				return <-pace
 			})
@@ -131,7 +130,7 @@ func TestRetryUntil(t *testing.T) {
 			pace <- nil
 			pace <- task.NewRetryableError(errors.New("bazErr"))
 
-			err := repeat(cancel)
+			err := repeat(context.Background())
 
 			assert.NoError(t, err)
 			assert.Equal(t, 3, cnt)
@@ -145,8 +144,7 @@ func TestRetryUntil(t *testing.T) {
 
 			cnt := 0
 			pace := make(chan error, 10)
-			cancel := make(chan struct{})
-			repeat := task.RetryUntil(10, 1, func(cancel <-chan struct{}) error {
+			repeat := task.RetryUntil(10, 1, func(ctx context.Context) error {
 				cnt++
 				return <-pace
 			})
@@ -155,7 +153,7 @@ func TestRetryUntil(t *testing.T) {
 			pace <- task.NewRetryableError(errors.New("barErr"))
 			pace <- errors.New("bazErr")
 
-			err := repeat(cancel)
+			err := repeat(context.Background())
 
 			assert.EqualError(t, err, "bazErr")
 			assert.Equal(t, 3, cnt)
@@ -170,8 +168,7 @@ func TestRetryUntil(t *testing.T) {
 
 			cnt := 0
 			pace := make(chan error, 10)
-			cancel := make(chan struct{})
-			repeat := task.RetryUntil(2, 1, func(cancel <-chan struct{}) error {
+			repeat := task.RetryUntil(2, 1, func(ctx context.Context) error {
 				cnt++
 				return <-pace
 			})
@@ -180,7 +177,7 @@ func TestRetryUntil(t *testing.T) {
 			pace <- task.NewRetryableError(errors.New("barErr"))
 			pace <- errors.New("bazErr")
 
-			err := repeat(cancel)
+			err := repeat(context.Background())
 
 			require.IsType(t, (*task.MaxRetryExceedError)(nil), err)
 			assert.EqualError(t, err.(*task.MaxRetryExceedError).Cause(), "barErr")
@@ -196,19 +193,19 @@ func TestRetryUntil(t *testing.T) {
 
 			cnt := 0
 			pace := make(chan error, 10)
-			cancel := make(chan struct{})
-			repeat := task.RetryUntil(10, time.Hour, func(cancel <-chan struct{}) error {
+			repeat := task.RetryUntil(10, time.Hour, func(ctx context.Context) error {
 				cnt++
 				return <-pace
 			})
 
 			pace <- task.NewRetryableError(errors.New("fooErr"))
 
+			ctx, cancel := context.WithCancel(context.Background())
 			go func() {
-				close(cancel)
+				cancel()
 			}()
 
-			err := repeat(cancel)
+			err := repeat(ctx)
 			assert.NoError(t, err)
 			assert.Equal(t, 1, cnt)
 		},
@@ -223,8 +220,7 @@ func TestRetryWithDeadline(t *testing.T) {
 
 			cnt := 0
 			pace := make(chan error, 10)
-			cancel := make(chan struct{})
-			repeat := task.RetryWithDeadline(time.Hour, 1, func(cancel <-chan struct{}) error {
+			repeat := task.RetryWithDeadline(time.Hour, 1, func(ctx context.Context) error {
 				cnt++
 				return <-pace
 			})
@@ -234,7 +230,7 @@ func TestRetryWithDeadline(t *testing.T) {
 			pace <- nil
 			pace <- task.NewRetryableError(errors.New("bazErr"))
 
-			err := repeat(cancel)
+			err := repeat(context.Background())
 
 			assert.NoError(t, err)
 			assert.Equal(t, 3, cnt)
@@ -248,8 +244,7 @@ func TestRetryWithDeadline(t *testing.T) {
 
 			cnt := 0
 			pace := make(chan error, 10)
-			cancel := make(chan struct{})
-			repeat := task.RetryWithDeadline(time.Hour, 1, func(cancel <-chan struct{}) error {
+			repeat := task.RetryWithDeadline(time.Hour, 1, func(ctx context.Context) error {
 				cnt++
 				return <-pace
 			})
@@ -258,7 +253,7 @@ func TestRetryWithDeadline(t *testing.T) {
 			pace <- task.NewRetryableError(errors.New("barErr"))
 			pace <- errors.New("bazErr")
 
-			err := repeat(cancel)
+			err := repeat(context.Background())
 
 			assert.EqualError(t, err, "bazErr")
 			assert.Equal(t, 3, cnt)
@@ -273,15 +268,14 @@ func TestRetryWithDeadline(t *testing.T) {
 
 			cnt := 0
 			pace := make(chan error, 10)
-			cancel := make(chan struct{})
-			repeat := task.RetryWithDeadline(1, time.Hour, func(cancel <-chan struct{}) error {
+			repeat := task.RetryWithDeadline(1, time.Hour, func(ctx context.Context) error {
 				cnt++
 				return <-pace
 			})
 
 			pace <- task.NewRetryableError(errors.New("fooErr"))
 
-			err := repeat(cancel)
+			err := repeat(context.Background())
 
 			require.IsType(t, (*task.DeadlineRetryError)(nil), err)
 			assert.EqualError(t, err.(*task.DeadlineRetryError).Cause(), "fooErr")
@@ -296,13 +290,12 @@ func TestRetryWithDeadline(t *testing.T) {
 		func(t *testing.T) {
 			t.Parallel()
 
-			cancel := make(chan struct{})
-			repeat := task.RetryWithDeadline(1, time.Hour, func(cancel <-chan struct{}) error {
-				<-cancel
+			repeat := task.RetryWithDeadline(1, time.Hour, func(ctx context.Context) error {
+				<-ctx.Done()
 				return nil
 			})
 
-			err := repeat(cancel)
+			err := repeat(context.Background())
 
 			require.IsType(t, (*task.DeadlineRetryError)(nil), err)
 			assert.NoError(t, err.(*task.DeadlineRetryError).Cause())
@@ -317,19 +310,19 @@ func TestRetryWithDeadline(t *testing.T) {
 
 			cnt := 0
 			pace := make(chan error, 10)
-			cancel := make(chan struct{})
-			repeat := task.RetryWithDeadline(time.Hour, time.Hour, func(cancel <-chan struct{}) error {
+			repeat := task.RetryWithDeadline(time.Hour, time.Hour, func(ctx context.Context) error {
 				cnt++
 				return <-pace
 			})
 
 			pace <- task.NewRetryableError(errors.New("fooErr"))
 
+			ctx, cancel := context.WithCancel(context.Background())
 			go func() {
-				close(cancel)
+				cancel()
 			}()
 
-			err := repeat(cancel)
+			err := repeat(ctx)
 			assert.NoError(t, err)
 			assert.Equal(t, 1, cnt)
 		},
