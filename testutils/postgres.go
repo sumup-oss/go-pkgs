@@ -160,7 +160,6 @@ func NewFakePostgresServerFromEnv() *FakePostgresServer {
 
 	user := os.Getenv("TEST_POSTGRES_USER")
 	// NOTE: Disable false positive lint offense
-	// nolint: goconst
 	if user == "" {
 		user = DefaultPostgresUser
 	}
