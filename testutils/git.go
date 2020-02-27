@@ -39,7 +39,7 @@ import (
 
 const (
 	DefaultFakeGitServerContainerName = "fake_git_server"
-	DockerImage                       = "winlu/docker-git-server"
+	GitDockerImage                    = "winlu/docker-git-server"
 	DefaultExposedGitPort             = 2222
 	DefaultExposedGitBindHost         = "127.0.0.1"
 	DefaultGitDockerDaemonHost        = "unix:///var/run/docker.sock"
@@ -420,7 +420,7 @@ func (s *FakeGitServer) PrepareGitServerWithArgs() error {
 		"-d",
 		"--rm",
 		"-ti",
-		DockerImage,
+		GitDockerImage,
 	)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
@@ -433,7 +433,7 @@ func (s *FakeGitServer) PrepareGitServerWithArgs() error {
 	// NOTE: Check 15 times with interval 1 second,
 	// for healthiness of previously started git server.
 	isHealthy := false
-	log.Printf("Waiting for GIT %s to be healthy\n", DockerImage)
+	log.Printf("Waiting for GIT %s to be healthy\n", GitDockerImage)
 
 	for i := 0; i < 15; i++ {
 		if s.IsGitHealthy() {
@@ -444,10 +444,10 @@ func (s *FakeGitServer) PrepareGitServerWithArgs() error {
 	}
 
 	if !isHealthy {
-		return fmt.Errorf("GIT %s still not healthy after 15 attempts", DockerImage)
+		return fmt.Errorf("GIT %s still not healthy after 15 attempts", GitDockerImage)
 	}
 
-	log.Printf("GIT %s is healthy\n", DockerImage)
+	log.Printf("GIT %s is healthy\n", GitDockerImage)
 	return nil
 }
 
