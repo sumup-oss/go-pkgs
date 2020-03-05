@@ -25,13 +25,15 @@ type RabbitMqClientConfig struct {
 }
 
 type RabbitMQClient struct {
-	amqpURI string
-	conn    *amqp.Connection
-	channel *amqp.Channel
-	metric  Metric
+	amqpURI               string
+	conn                  *amqp.Connection
+	channel               *amqp.Channel
+	metric                Metric
+	connectRetryAttempts  int
+	initialReconnectDelay time.Duration
 }
 
-func NewRabbitMQClient(config RabbitMqClientConfig) (*RabbitMQClient, error) {
+func NewRabbitMQClient(config *RabbitMqClientConfig) (*RabbitMQClient, error) {
 	amqpURI := fmt.Sprintf(
 		"amqp://%s:%s@%s:%d/",
 		config.Username,
@@ -41,8 +43,10 @@ func NewRabbitMQClient(config RabbitMqClientConfig) (*RabbitMQClient, error) {
 	)
 
 	client := &RabbitMQClient{
-		amqpURI: amqpURI,
-		metric:  config.Metrics,
+		amqpURI:               amqpURI,
+		metric:                config.Metrics,
+		connectRetryAttempts:  config.ConnectRetryAttempts,
+		initialReconnectDelay: config.InitialReconnectDelay,
 	}
 
 	err := client.establishConnection()
@@ -59,11 +63,11 @@ func NewRabbitMQClient(config RabbitMqClientConfig) (*RabbitMQClient, error) {
 }
 
 func (c *RabbitMQClient) establishConnection() error {
-	for i := 0; i < RetryAttempts; i++ {
+	for i := 0; i < c.connectRetryAttempts; i++ {
 		conn, err := amqp.Dial(c.amqpURI)
 		if err != nil {
 			c.metric.ObserveRabbitMQConnectionRetry()
-			time.Sleep(ReconnectDelay * time.Second)
+			time.Sleep(c.initialReconnectDelay)
 			continue
 		}
 
@@ -78,11 +82,11 @@ func (c *RabbitMQClient) establishConnection() error {
 }
 
 func (c *RabbitMQClient) establishChannel() error {
-	for i := 0; i < RetryAttempts; i++ {
+	for i := 0; i < c.connectRetryAttempts; i++ {
 		channel, err := c.conn.Channel()
 		if err != nil {
 			c.metric.ObserveRabbitMQChanelConnectionRetry()
-			time.Sleep(ReconnectDelay * time.Second)
+			time.Sleep(c.initialReconnectDelay)
 			continue
 		}
 

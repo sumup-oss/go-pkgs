@@ -18,7 +18,7 @@ func NewRabbitMQConsumer(
 ) *RabbitMQConsumer {
 	return &RabbitMQConsumer{
 		client:  client,
-		done:    make(chan error),
+		done:    make(chan bool),
 		handler: handler,
 		logger:  logger,
 		metric:  metric,
@@ -27,25 +27,21 @@ func NewRabbitMQConsumer(
 
 type RabbitMQConsumer struct {
 	client  *RabbitMQClient
-	done    chan error
+	done    chan bool
 	handler Handler
 	logger  logger.StructuredLogger
 	metric  Metric
 }
 
 func (c *RabbitMQConsumer) Run(shutdownChan <-chan struct{}) error {
-
 	go func() {
-		select {
-		case <-shutdownChan:
-			c.logger.Info("Received shutdown signal. Going to close rabbit connections.")
-			c.client.channel.Cancel(c.handler.GetConsumerTag(), false) //this will wait for the consumer to finish
-			err := <-c.done
-			c.logger.Error("cancel error", zap.Error(err))
-			c.client.Shutdown()
+		<-shutdownChan
+		c.logger.Info("Received shutdown signal. Going to close rabbit connections.")
+		_ = c.client.channel.Cancel(c.handler.GetConsumerTag(), false) //this will wait for the consumer to finish
 
-			return
-		}
+		<-c.done
+		c.logger.Info("handler stopped")
+		_ = c.client.Shutdown()
 	}()
 
 	deliveries, err := c.client.channel.Consume(
@@ -66,7 +62,7 @@ func (c *RabbitMQConsumer) Run(shutdownChan <-chan struct{}) error {
 	return err
 }
 
-func (c *RabbitMQConsumer) handle(deliveries <-chan amqp.Delivery, done chan error) error {
+func (c *RabbitMQConsumer) handle(deliveries <-chan amqp.Delivery, done chan bool) error {
 	for d := range deliveries {
 		c.logger.Debug(
 			"msg delivered",
@@ -108,6 +104,6 @@ func (c *RabbitMQConsumer) handle(deliveries <-chan amqp.Delivery, done chan err
 		}
 	}
 
-	done <- stacktrace.NewError("consumer stopped")
-	return stacktrace.NewError("consumer stopped")
+	done <- true
+	return nil
 }
