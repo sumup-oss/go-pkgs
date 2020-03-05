@@ -1,8 +1,6 @@
 package rabbitmq
 
 import (
-	"fmt"
-	"log"
 	"time"
 
 	"github.com/palantir/stacktrace"
@@ -10,16 +8,9 @@ import (
 	"github.com/streadway/amqp"
 )
 
-// ReconnectDelay ...
-const ReconnectDelay = 2
-const RetryAttempts = 5
-
-type RabbitMqClientConfig struct {
-	Host                  string
-	Port                  int
-	Username              string
-	Password              string
-	Metrics               Metric
+type ClientConfig struct {
+	ConnectionURI         string
+	Metric                Metric
 	ConnectRetryAttempts  int
 	InitialReconnectDelay time.Duration
 }
@@ -33,81 +24,67 @@ type RabbitMQClient struct {
 	initialReconnectDelay time.Duration
 }
 
-func NewRabbitMQClient(config *RabbitMqClientConfig) (*RabbitMQClient, error) {
-	amqpURI := fmt.Sprintf(
-		"amqp://%s:%s@%s:%d/",
-		config.Username,
-		config.Password,
-		config.Host,
-		config.Port,
-	)
-
+func NewRabbitMQClient(config *ClientConfig) (*RabbitMQClient, error) {
 	client := &RabbitMQClient{
-		amqpURI:               amqpURI,
-		metric:                config.Metrics,
+		amqpURI:               config.ConnectionURI,
+		metric:                config.Metric,
 		connectRetryAttempts:  config.ConnectRetryAttempts,
 		initialReconnectDelay: config.InitialReconnectDelay,
 	}
 
-	err := client.establishConnection()
-	if err != nil {
-		return nil, err
+	// dial rabbitmq
+	var connError error
+	for i := 0; i < config.ConnectRetryAttempts; i++ {
+		conn, err := amqp.Dial(client.amqpURI)
+		if err != nil {
+			config.Metric.ObserveRabbitMQConnectionRetry()
+			time.Sleep(client.initialReconnectDelay)
+			connError = err
+			continue
+		}
+
+		client.conn = conn
+		client.metric.ObserveRabbitMQConnection()
+		connError = nil
+		break
 	}
 
-	err = client.establishChannel()
-	if err != nil {
-		return nil, err
+	if connError != nil {
+		client.metric.ObserveRabbitMQConnectionFailed()
+		return nil, stacktrace.Propagate(connError, "couldn't dial rabbitmq")
+	}
+
+	// create rabbitmq channel
+	var channelError error
+	for i := 0; i < client.connectRetryAttempts; i++ {
+		channel, err := client.conn.Channel()
+		if err != nil {
+			client.metric.ObserveRabbitMQChanelConnectionRetry()
+			time.Sleep(client.initialReconnectDelay)
+			channelError = err
+			continue
+		}
+
+		client.channel = channel
+		client.metric.ObserveRabbitMQChanelConnection()
+		channelError = nil
+
+		break
+	}
+
+	if channelError != nil {
+		client.metric.ObserveRabbitMQChanelConnectionFailed()
+		return nil, stacktrace.Propagate(channelError, "couldn't create channel for rabbitmq")
 	}
 
 	return client, nil
 }
 
-func (c *RabbitMQClient) establishConnection() error {
-	for i := 0; i < c.connectRetryAttempts; i++ {
-		conn, err := amqp.Dial(c.amqpURI)
-		if err != nil {
-			c.metric.ObserveRabbitMQConnectionRetry()
-			time.Sleep(c.initialReconnectDelay)
-			continue
-		}
-
-		c.conn = conn
-		c.metric.ObserveRabbitMQConnection()
-
-		return nil
-	}
-
-	c.metric.ObserveRabbitMQConnectionFailed()
-	return stacktrace.NewError("couldn't dial rabbitmq")
-}
-
-func (c *RabbitMQClient) establishChannel() error {
-	for i := 0; i < c.connectRetryAttempts; i++ {
-		channel, err := c.conn.Channel()
-		if err != nil {
-			c.metric.ObserveRabbitMQChanelConnectionRetry()
-			time.Sleep(c.initialReconnectDelay)
-			continue
-		}
-
-		c.channel = channel
-		c.metric.ObserveRabbitMQChanelConnection()
-
-		return nil
-	}
-
-	c.metric.ObserveRabbitMQChanelConnectionFailed()
-	return stacktrace.NewError("couldn't open channel for rabbitmq")
-}
-
-func (c *RabbitMQClient) Shutdown() error {
+func (c *RabbitMQClient) Close() error {
 	err := c.conn.Close()
 	if err != nil {
-		return stacktrace.NewError("AMQP connection close error: %s", err)
+		return stacktrace.Propagate(err, "AMQP connection close")
 	}
 
-	defer log.Printf("AMQP shutdown OK")
-
-	// wait for handle() to exit
 	return nil
 }

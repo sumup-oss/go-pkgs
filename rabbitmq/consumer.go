@@ -10,7 +10,15 @@ import (
 	"github.com/streadway/amqp"
 )
 
-func NewRabbitMQConsumer(
+type RabbitMQConsumer struct {
+	client  *RabbitMQClient
+	done    chan bool
+	handler Handler
+	logger  logger.StructuredLogger
+	metric  Metric
+}
+
+func NewConsumer(
 	client *RabbitMQClient,
 	handler Handler,
 	logger logger.StructuredLogger, // decide if we want it, maybe not just return errors
@@ -25,14 +33,6 @@ func NewRabbitMQConsumer(
 	}
 }
 
-type RabbitMQConsumer struct {
-	client  *RabbitMQClient
-	done    chan bool
-	handler Handler
-	logger  logger.StructuredLogger
-	metric  Metric
-}
-
 func (c *RabbitMQConsumer) Run(shutdownChan <-chan struct{}) error {
 	go func() {
 		<-shutdownChan
@@ -41,7 +41,7 @@ func (c *RabbitMQConsumer) Run(shutdownChan <-chan struct{}) error {
 
 		<-c.done
 		c.logger.Info("handler stopped")
-		_ = c.client.Shutdown()
+		_ = c.client.Close()
 	}()
 
 	deliveries, err := c.client.channel.Consume(
@@ -59,7 +59,7 @@ func (c *RabbitMQConsumer) Run(shutdownChan <-chan struct{}) error {
 
 	err = c.handle(deliveries, c.done)
 
-	return err
+	return stacktrace.Propagate(err, "stopped consumer")
 }
 
 func (c *RabbitMQConsumer) handle(deliveries <-chan amqp.Delivery, done chan bool) error {
@@ -80,6 +80,10 @@ func (c *RabbitMQConsumer) handle(deliveries <-chan amqp.Delivery, done chan boo
 			err := d.Ack(false)
 			if err != nil {
 				c.logger.Error("failed to ack message", zap.Error(err))
+
+				if c.handler.MustStopOnAckError() {
+					return stacktrace.Propagate(err, "stop consuming due to ack error")
+				}
 			}
 			c.logger.Error("successful ack message")
 			continue
@@ -89,6 +93,10 @@ func (c *RabbitMQConsumer) handle(deliveries <-chan amqp.Delivery, done chan boo
 			err := d.Nack(false, requeue)
 			if err != nil {
 				c.logger.Error("failed to nack message", zap.Error(err))
+
+				if c.handler.MustStopOnNAckError() {
+					return stacktrace.Propagate(err, "stop consuming due to nack error")
+				}
 			}
 			c.logger.Error("successful nack message")
 			continue
@@ -98,6 +106,10 @@ func (c *RabbitMQConsumer) handle(deliveries <-chan amqp.Delivery, done chan boo
 			err := d.Reject(requeue)
 			if err != nil {
 				c.logger.Error("failed to reject message", zap.Error(err))
+
+				if c.handler.MustStopOnRejectError() {
+					return stacktrace.Propagate(err, "stop consuming due to reject error")
+				}
 			}
 			c.logger.Error("successful rejected message")
 			continue
