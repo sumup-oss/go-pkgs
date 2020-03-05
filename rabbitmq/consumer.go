@@ -51,8 +51,8 @@ func (c *RabbitMQConsumer) Run(shutdownChan <-chan struct{}) error {
 	deliveries, err := c.client.channel.Consume(
 		c.handler.GetQueue(),
 		c.handler.GetConsumerTag(),
-		false,
-		true,
+		c.handler.QueueAutoAck(),
+		c.handler.ExclusiveConsumer(),
 		false,
 		false,
 		nil,
@@ -74,18 +74,40 @@ func (c *RabbitMQConsumer) handle(deliveries <-chan amqp.Delivery, done chan err
 			zap.ByteString("body", d.Body),
 		)
 
-		ack, err := c.handler.ReceiveMessage(d.Body)
-		if !ack {
+		ack, nack, reject, requeue := c.handler.ReceiveMessage(d.Body)
 
+		if c.handler.QueueAutoAck() {
+			continue
 		}
 
-		err = d.Ack(false)
-		if err != nil {
-			c.logger.Error("failed to ack message", zap.Error(err))
+		if ack {
+			err := d.Ack(false)
+			if err != nil {
+				c.logger.Error("failed to ack message", zap.Error(err))
+			}
+			c.logger.Error("successful ack message")
+			continue
 		}
-		c.logger.Error("successful ack message")
+
+		if nack {
+			err := d.Nack(false, requeue)
+			if err != nil {
+				c.logger.Error("failed to nack message", zap.Error(err))
+			}
+			c.logger.Error("successful nack message")
+			continue
+		}
+
+		if reject {
+			err := d.Reject(requeue)
+			if err != nil {
+				c.logger.Error("failed to reject message", zap.Error(err))
+			}
+			c.logger.Error("successful rejected message")
+			continue
+		}
 	}
-	c.logger.Info("handle: deliveries channel closed")
-	done <- stacktrace.NewError("foo bar")
-	return stacktrace.NewError("foo bar")
+
+	done <- stacktrace.NewError("consumer stopped")
+	return stacktrace.NewError("consumer stopped")
 }
