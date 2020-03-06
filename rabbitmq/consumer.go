@@ -1,6 +1,22 @@
+// Copyright 2019 SumUp Ltd.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package rabbitmq
 
 import (
+	"context"
+
 	"github.com/palantir/stacktrace"
 
 	"go.uber.org/zap"
@@ -10,6 +26,8 @@ import (
 	"github.com/streadway/amqp"
 )
 
+// A consumer that is works with Handler interface
+// It needs a RabbitMQClient to work with and is started with the Run() method
 type RabbitMQConsumer struct {
 	client  *RabbitMQClient
 	done    chan bool
@@ -21,7 +39,7 @@ type RabbitMQConsumer struct {
 func NewConsumer(
 	client *RabbitMQClient,
 	handler Handler,
-	logger logger.StructuredLogger, // decide if we want it, maybe not just return errors
+	logger logger.StructuredLogger,
 	metric Metric,
 ) *RabbitMQConsumer {
 	return &RabbitMQConsumer{
@@ -33,16 +51,20 @@ func NewConsumer(
 	}
 }
 
-func (c *RabbitMQConsumer) Run(shutdownChan <-chan struct{}) error {
+func (c *RabbitMQConsumer) Run(ctx context.Context) error {
 	go func() {
-		<-shutdownChan
-		c.logger.Info("Received shutdown signal. Going to close rabbit connections.")
+		<-ctx.Done()
+		c.logger.Info("Received context cancel. Going to close rabbit connections.")
 		_ = c.client.channel.Cancel(c.handler.GetConsumerTag(), false) //this will wait for the consumer to finish
 
 		<-c.done
 		c.logger.Info("handler stopped")
 		_ = c.client.Close()
 	}()
+
+	if ctx.Err() != nil {
+		return ctx.Err()
+	}
 
 	deliveries, err := c.client.channel.Consume(
 		c.handler.GetQueue(),
@@ -57,12 +79,13 @@ func (c *RabbitMQConsumer) Run(shutdownChan <-chan struct{}) error {
 		return stacktrace.Propagate(err, "couldn't start consuming from channel")
 	}
 
-	err = c.handle(deliveries, c.done)
+	err = c.handleDeliveries(ctx, deliveries)
 
 	return stacktrace.Propagate(err, "stopped consumer")
 }
 
-func (c *RabbitMQConsumer) handle(deliveries <-chan amqp.Delivery, done chan bool) error {
+// nolint:gocognit
+func (c *RabbitMQConsumer) handleDeliveries(ctx context.Context, deliveries <-chan amqp.Delivery) error {
 	for d := range deliveries {
 		c.logger.Debug(
 			"msg delivered",
@@ -70,7 +93,10 @@ func (c *RabbitMQConsumer) handle(deliveries <-chan amqp.Delivery, done chan boo
 			zap.ByteString("body", d.Body),
 		)
 
-		ack, nack, reject, requeue := c.handler.ReceiveMessage(d.Body)
+		ack, nack, reject, requeue, err := c.handler.ReceiveMessage(ctx, d.Body)
+		if err != nil {
+			return stacktrace.Propagate(err, "handler returned error")
+		}
 
 		if c.handler.QueueAutoAck() {
 			continue
@@ -116,6 +142,6 @@ func (c *RabbitMQConsumer) handle(deliveries <-chan amqp.Delivery, done chan boo
 		}
 	}
 
-	done <- true
+	c.done <- true
 	return nil
 }
