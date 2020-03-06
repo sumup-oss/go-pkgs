@@ -24,17 +24,22 @@ import (
 // It will stop all the tasks on the first task failure, and the Wait() method will return only the
 // first encountered error.
 type Group struct {
-	wg          sync.WaitGroup
+	wg         sync.WaitGroup
+	ctx        context.Context
+	cancelFunc context.CancelFunc
+
+	// mu protects the firstRunErr
 	mu          sync.Mutex
-	cancelCh    chan struct{}
-	canceled    bool
 	firstRunErr error
 }
 
 // NewGroup creates new task group instance.
 func NewGroup() *Group {
+	ctx, cancel := context.WithCancel(context.Background())
+
 	return &Group{
-		cancelCh: make(chan struct{}),
+		ctx:        ctx,
+		cancelFunc: cancel,
 	}
 }
 
@@ -46,9 +51,7 @@ func NewGroup() *Group {
 // Typically one should schedule tasks with the Group.Go() method and then wait for all of them to
 // finish by using the Group.Wait() method.
 func (g *Group) Go(tasks ...TaskFunc) {
-	g.mu.Lock()
-	defer g.mu.Unlock()
-	if g.canceled {
+	if g.ctx.Err() != nil {
 		return
 	}
 
@@ -57,7 +60,7 @@ func (g *Group) Go(tasks ...TaskFunc) {
 		go func(fn TaskFunc) {
 			defer g.wg.Done()
 
-			err := fn(g.cancelCh)
+			err := fn(g.ctx)
 			if err != nil {
 				g.cancelWithError(err)
 			}
@@ -72,7 +75,7 @@ func (g *Group) Wait(ctx context.Context) error {
 	if ctx != context.TODO() {
 		go func() {
 			select {
-			case <-g.cancelCh:
+			case <-g.ctx.Done():
 				return
 			case <-ctx.Done():
 				g.cancelWithError(ctx.Err())
@@ -84,31 +87,20 @@ func (g *Group) Wait(ctx context.Context) error {
 	return g.firstRunErr
 }
 
-func (g *Group) unsafeCancel() {
-	if g.canceled {
-		return
-	}
-
-	g.canceled = true
-	close(g.cancelCh)
-}
-
 func (g *Group) cancelWithError(err error) {
 	g.mu.Lock()
-	defer g.mu.Unlock()
 
 	// NOTE: only the first error is retained.
 	if g.firstRunErr == nil {
 		g.firstRunErr = err
 	}
 
-	g.unsafeCancel()
+	g.mu.Unlock()
+
+	g.cancelFunc()
 }
 
 // Cancel cancels all the tasks.
 func (g *Group) Cancel() {
-	g.mu.Lock()
-	defer g.mu.Unlock()
-
-	g.unsafeCancel()
+	g.cancelFunc()
 }

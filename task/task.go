@@ -14,14 +14,16 @@
 
 package task
 
+import "context"
+
 type TaskInterface interface {
-	Run(cancel <-chan struct{}) error
+	Run(ctx context.Context) error
 }
 
 // Task adapts a TaskInterface to TaskFunc required by the task.Group to run tasks.
 func Task(t TaskInterface) TaskFunc {
 	//nolint:gocritic
-	return func(cancel <-chan struct{}) error {
-		return t.Run(cancel)
+	return func(ctx context.Context) error {
+		return t.Run(ctx)
 	}
 }
