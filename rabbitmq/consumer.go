@@ -55,7 +55,11 @@ func (c *RabbitMQConsumer) Run(ctx context.Context) error {
 	go func() {
 		<-ctx.Done()
 		c.logger.Info("Received context cancel. Going to close rabbit connections.")
-		_ = c.client.channel.Cancel(c.handler.GetConsumerTag(), false) //this will wait for the consumer to finish
+		_ = c.client.channel.Cancel(c.handler.GetConsumerTag(), false)
+
+		if !c.handler.WaitToConsumeInflight() {
+			c.client.channel.Close()
+		}
 
 		<-c.done
 		c.logger.Info("handler stopped")

@@ -24,5 +24,6 @@ type Handler interface {
 	MustStopOnAckError() bool
 	MustStopOnNAckError() bool
 	MustStopOnRejectError() bool
+	WaitToConsumeInflight() bool
 	ReceiveMessage(ctx context.Context, payload []byte) (ack, nack, reject, requeue bool, err error)
 }
