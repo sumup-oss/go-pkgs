@@ -25,5 +25,18 @@ type Handler interface {
 	MustStopOnNAckError() bool
 	MustStopOnRejectError() bool
 	WaitToConsumeInflight() bool
-	ReceiveMessage(ctx context.Context, payload []byte) (ack, nack, reject, requeue bool, err error)
+	ReceiveMessage(ctx context.Context, payload []byte) (acknowledgement HandlerAcknowledgement, err error)
+}
+
+type AcknowledgementType int
+
+const (
+	Ack AcknowledgementType = iota
+	Nack
+	Reject
+)
+
+type HandlerAcknowledgement struct {
+	Acknowledgement AcknowledgementType
+	Requeue         bool
 }

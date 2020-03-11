@@ -67,7 +67,7 @@ func (c *RabbitMQConsumer) Run(ctx context.Context) error {
 	}()
 
 	if ctx.Err() != nil {
-		return ctx.Err()
+		return stacktrace.Propagate(ctx.Err(), "context canceled")
 	}
 
 	deliveries, err := c.client.channel.Consume(
@@ -91,13 +91,15 @@ func (c *RabbitMQConsumer) Run(ctx context.Context) error {
 // nolint:gocognit
 func (c *RabbitMQConsumer) handleDeliveries(ctx context.Context, deliveries <-chan amqp.Delivery) error {
 	for d := range deliveries {
-		c.logger.Debug(
-			"msg delivered",
-			zap.Uint64("tag", d.DeliveryTag),
-			zap.ByteString("body", d.Body),
-		)
+		// nolint:godox
+		// TODO: until we add better logging level conditions
+		//c.logger.Debug(
+		//	"msg delivered",
+		//	zap.Uint64("tag", d.DeliveryTag),
+		//	zap.ByteString("body", d.Body),
+		//)
 
-		ack, nack, reject, requeue, err := c.handler.ReceiveMessage(ctx, d.Body)
+		acknowledgement, err := c.handler.ReceiveMessage(ctx, d.Body)
 		if err != nil {
 			return stacktrace.Propagate(err, "handler returned error")
 		}
@@ -106,7 +108,8 @@ func (c *RabbitMQConsumer) handleDeliveries(ctx context.Context, deliveries <-ch
 			continue
 		}
 
-		if ack {
+		switch acknowledgement.Acknowledgement {
+		case Ack:
 			err := d.Ack(false)
 			if err != nil {
 				c.logger.Error("failed to ack message", zap.Error(err))
@@ -117,10 +120,8 @@ func (c *RabbitMQConsumer) handleDeliveries(ctx context.Context, deliveries <-ch
 			}
 			c.logger.Error("successful ack message")
 			continue
-		}
-
-		if nack {
-			err := d.Nack(false, requeue)
+		case Nack:
+			err := d.Nack(false, acknowledgement.Requeue)
 			if err != nil {
 				c.logger.Error("failed to nack message", zap.Error(err))
 
@@ -130,10 +131,8 @@ func (c *RabbitMQConsumer) handleDeliveries(ctx context.Context, deliveries <-ch
 			}
 			c.logger.Error("successful nack message")
 			continue
-		}
-
-		if reject {
-			err := d.Reject(requeue)
+		case Reject:
+			err := d.Reject(acknowledgement.Requeue)
 			if err != nil {
 				c.logger.Error("failed to reject message", zap.Error(err))
 
@@ -143,6 +142,8 @@ func (c *RabbitMQConsumer) handleDeliveries(ctx context.Context, deliveries <-ch
 			}
 			c.logger.Error("successful rejected message")
 			continue
+		default:
+			return stacktrace.NewError("acknowledgement type not in predefined")
 		}
 	}
 
