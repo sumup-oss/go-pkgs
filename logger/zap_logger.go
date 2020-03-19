@@ -15,11 +15,11 @@
 package logger
 
 import (
-	"log/syslog"
 	"os"
 
+	gsyslog "github.com/hashicorp/go-syslog"
+
 	"github.com/palantir/stacktrace"
-	"github.com/tchap/zapext/zapsyslog"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )
@@ -48,17 +48,6 @@ const (
 )
 
 var (
-	syslogFacilities = map[int]syslog.Priority{
-		0: syslog.LOG_LOCAL0,
-		1: syslog.LOG_LOCAL1,
-		2: syslog.LOG_LOCAL2,
-		3: syslog.LOG_LOCAL3,
-		4: syslog.LOG_LOCAL4,
-		5: syslog.LOG_LOCAL5,
-		6: syslog.LOG_LOCAL6,
-		7: syslog.LOG_LOCAL7,
-	}
-
 	zapLogLevels = map[string]zapcore.Level{
 		LogLevelPanic: zapcore.PanicLevel,
 		LogLevelFatal: zapcore.FatalLevel,
@@ -84,14 +73,15 @@ var (
 )
 
 type Configuration struct {
-	Level    string
-	Encoding string
-
+	Level         string
+	Encoding      string
 	StdoutEnabled bool
-
-	SyslogEnabled  bool
-	SyslogFacility int
-	SyslogTag      string
+	SyslogEnabled bool
+	// SyslogFacility is one of `KERN,USER,MAIL,DAEMON,AUTH,SYSLOG,LPR,NEWS,UUCP,CRON,AUTHPRIV,FTP,LOCAL0,
+	// LOCAL1,LOCAL2,LOCAL3,LOCAL4,LOCAL5,LOCAL6,LOCAL7`
+	SyslogFacility string
+	// SyslogTag is tag for all messages produced
+	SyslogTag string
 }
 
 type StructuredLogger interface {
@@ -100,7 +90,6 @@ type StructuredLogger interface {
 	Error(msg string, fields ...zap.Field)
 	Info(msg string, fields ...zap.Field)
 	Debug(msg string, fields ...zap.Field)
-
 	Sync() error
 }
 
@@ -108,8 +97,6 @@ type StructuredLogger interface {
 var _ StructuredLogger = (*zap.Logger)(nil)
 
 func NewZapLogger(config Configuration) (*zap.Logger, error) {
-	cores := []zapcore.Core{}
-
 	encoder, err := newEncoder(config.Encoding, &defaultZapEncoderConfig)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "creating logger encoder failed")
@@ -120,30 +107,24 @@ func NewZapLogger(config Configuration) (*zap.Logger, error) {
 		return nil, stacktrace.Propagate(err, "creating logger failed")
 	}
 
+	var cores []zapcore.Core
+
 	if config.StdoutEnabled {
 		writer := zapcore.Lock(os.Stdout)
-
-		core := zapcore.NewCore(encoder, writer, level)
-		cores = append(cores, core)
+		cores = append(cores, zapcore.NewCore(encoder, writer, level))
 	}
 
 	if config.SyslogEnabled {
-		facility, err := getSyslogFacility(config.SyslogFacility)
-		if err != nil {
-			return nil, stacktrace.Propagate(err, "creating syslog logging backend failed")
-		}
-
 		// The syslog.LOG_INFO is used here intentionally,
 		// since it is just a default severity if the syslog writer is used by its own.
 		// All zapsyslog calls will overwrite this appropriately.
 		// For example logger.Debug() will use syslog.LOG_DEBUG severity.
-		writer, err := syslog.New(facility|syslog.LOG_INFO, config.SyslogTag)
+		writer, err := gsyslog.NewLogger(gsyslog.LOG_INFO, config.SyslogFacility, config.SyslogTag)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "creating syslog logging backend failed")
 		}
 
-		core := zapsyslog.NewCore(level, encoder, writer)
-		cores = append(cores, core)
+		cores = append(cores, NewZapSyslogCore(level, encoder, writer))
 	}
 
 	logger := zap.New(
@@ -172,13 +153,4 @@ func getZapLevel(level string) (zapcore.Level, error) {
 	}
 
 	return zapLevel, nil
-}
-
-func getSyslogFacility(facility int) (syslog.Priority, error) {
-	priority, ok := syslogFacilities[facility]
-	if !ok {
-		return 0, stacktrace.NewError("invalid syslog facility %d, must be one of 0-7", priority)
-	}
-
-	return priority, nil
 }

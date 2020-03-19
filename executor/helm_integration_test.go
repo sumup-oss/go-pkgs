@@ -26,6 +26,12 @@ import (
 
 func hasHelmBinary(executor os.OsExecutor) error {
 	_, _, err := executor.Execute("helm", nil, nil, "")
+	if err != nil {
+		return err
+	}
+
+	// HACK: Since we only support helm ~ 2.9.x
+	_, _, err = executor.Execute("helm --version | grep 2.9", nil, nil, "")
 	return err
 }
 
