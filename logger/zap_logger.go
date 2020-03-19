@@ -91,13 +91,11 @@ type StructuredLogger interface {
 	Info(msg string, fields ...zap.Field)
 	Warn(msg string, fields ...zap.Field)
 	Debug(msg string, fields ...zap.Field)
+	GetLevel() zapcore.Level
 	Sync() error
 }
 
-// Ensure that zap.Logger implements the StructuredLogger interface.
-var _ StructuredLogger = (*zap.Logger)(nil)
-
-func NewZapLogger(config Configuration) (*zap.Logger, error) {
+func NewZapLogger(config Configuration) (*ZapLogger, error) {
 	encoder, err := newEncoder(config.Encoding, &defaultZapEncoderConfig)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "creating logger encoder failed")
@@ -133,7 +131,10 @@ func NewZapLogger(config Configuration) (*zap.Logger, error) {
 		zap.AddCaller(),
 	)
 
-	return logger, nil
+	return &ZapLogger{
+		Logger: logger,
+		level:  level,
+	}, nil
 }
 
 func newEncoder(encoding string, config *zapcore.EncoderConfig) (zapcore.Encoder, error) {
@@ -154,4 +155,16 @@ func getZapLevel(level string) (zapcore.Level, error) {
 	}
 
 	return zapLevel, nil
+}
+
+// Ensure that ZapLogger implements the StructuredLogger interface.
+var _ StructuredLogger = (*ZapLogger)(nil)
+
+type ZapLogger struct {
+	*zap.Logger
+	level zapcore.Level
+}
+
+func (z *ZapLogger) GetLevel() zapcore.Level {
+	return z.level
 }
