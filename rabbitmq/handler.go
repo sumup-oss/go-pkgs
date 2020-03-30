@@ -17,7 +17,7 @@ package rabbitmq
 import "context"
 
 type Handler interface {
-	GetQueue() string
+	GetQueue() QueueConfig
 	GetConsumerTag() string
 	QueueAutoAck() bool
 	ExclusiveConsumer() bool
@@ -25,6 +25,8 @@ type Handler interface {
 	MustStopOnNAckError() bool
 	MustStopOnRejectError() bool
 	WaitToConsumeInflight() bool
+	MustDeclareQueue() bool
+	QueueBindings() []QueueBindConfig
 	ReceiveMessage(ctx context.Context, payload []byte) (acknowledgement HandlerAcknowledgement, err error)
 }
 
@@ -39,4 +41,19 @@ const (
 type HandlerAcknowledgement struct {
 	Acknowledgement AcknowledgementType
 	Requeue         bool
+}
+
+type QueueConfig struct {
+	Name       string
+	Durable    bool
+	AutoDelete bool
+	Exclusive  bool
+	NoWait     bool
+}
+
+type QueueBindConfig struct {
+	Name     string
+	Key      string
+	Exchange string
+	NoWait   bool
 }
