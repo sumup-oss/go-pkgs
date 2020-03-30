@@ -52,9 +52,12 @@ func NewConsumer(
 }
 
 func (c *RabbitMQConsumer) Run(ctx context.Context) error {
-	if c.handler.MustDeclareQueue() {
-		queueConfig := c.handler.GetQueue()
+	queueConfig := c.handler.GetQueue()
+	if queueConfig == nil {
+		return stacktrace.NewError("queueConfig can't be nil")
+	}
 
+	if c.handler.MustDeclareQueue() {
 		_, err := c.client.channel.QueueDeclare(
 			queueConfig.Name,
 			queueConfig.Durable,
@@ -98,7 +101,7 @@ func (c *RabbitMQConsumer) Run(ctx context.Context) error {
 	}
 
 	deliveries, err := c.client.channel.Consume(
-		c.handler.GetQueue().Name,
+		queueConfig.Name,
 		c.handler.GetConsumerTag(),
 		c.handler.QueueAutoAck(),
 		c.handler.ExclusiveConsumer(),

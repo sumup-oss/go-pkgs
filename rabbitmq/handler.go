@@ -17,7 +17,7 @@ package rabbitmq
 import "context"
 
 type Handler interface {
-	GetQueue() QueueConfig
+	GetQueue() *QueueConfig
 	GetConsumerTag() string
 	QueueAutoAck() bool
 	ExclusiveConsumer() bool
