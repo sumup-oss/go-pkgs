@@ -52,6 +52,36 @@ func NewConsumer(
 }
 
 func (c *RabbitMQConsumer) Run(ctx context.Context) error {
+	queueConfig := c.handler.GetQueue()
+	if queueConfig == nil {
+		return stacktrace.NewError("queueConfig can't be nil")
+	}
+
+	if c.handler.MustDeclareQueue() {
+		_, err := c.client.channel.QueueDeclare(
+			queueConfig.Name,
+			queueConfig.Durable,
+			queueConfig.AutoDelete,
+			queueConfig.Exclusive,
+			queueConfig.NoWait,
+			nil,
+		)
+		if err != nil {
+			return stacktrace.Propagate(err, "could not declare queue")
+		}
+
+		bindings := c.handler.QueueBindings()
+		for _, b := range bindings {
+			err := c.client.channel.QueueBind(b.Name, b.Key, b.Exchange, b.NoWait, nil)
+			if err != nil {
+				return stacktrace.Propagate(
+					err,
+					"could not create queue %s, exchange %s binding", b.Name, b.Exchange,
+				)
+			}
+		}
+	}
+
 	go func() {
 		<-ctx.Done()
 		c.logger.Info("Received context cancel. Going to close rabbit connections.")
@@ -71,7 +101,7 @@ func (c *RabbitMQConsumer) Run(ctx context.Context) error {
 	}
 
 	deliveries, err := c.client.channel.Consume(
-		c.handler.GetQueue(),
+		queueConfig.Name,
 		c.handler.GetConsumerTag(),
 		c.handler.QueueAutoAck(),
 		c.handler.ExclusiveConsumer(),
