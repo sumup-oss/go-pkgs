@@ -52,36 +52,6 @@ func NewConsumer(
 }
 
 func (c *RabbitMQConsumer) Run(ctx context.Context) error {
-	queueConfig := c.handler.GetQueue()
-	if queueConfig == nil {
-		return stacktrace.NewError("queueConfig can't be nil")
-	}
-
-	if c.handler.MustDeclareQueue() {
-		_, err := c.client.channel.QueueDeclare(
-			queueConfig.Name,
-			queueConfig.Durable,
-			queueConfig.AutoDelete,
-			queueConfig.Exclusive,
-			queueConfig.NoWait,
-			nil,
-		)
-		if err != nil {
-			return stacktrace.Propagate(err, "could not declare queue")
-		}
-
-		bindings := c.handler.QueueBindings()
-		for _, b := range bindings {
-			err := c.client.channel.QueueBind(b.Name, b.Key, b.Exchange, b.NoWait, nil)
-			if err != nil {
-				return stacktrace.Propagate(
-					err,
-					"could not create queue %s, exchange %s binding", b.Name, b.Exchange,
-				)
-			}
-		}
-	}
-
 	go func() {
 		<-ctx.Done()
 		c.logger.Info("Received context cancel. Going to close rabbit connections.")
@@ -101,7 +71,7 @@ func (c *RabbitMQConsumer) Run(ctx context.Context) error {
 	}
 
 	deliveries, err := c.client.channel.Consume(
-		queueConfig.Name,
+		c.handler.GetQueueName(),
 		c.handler.GetConsumerTag(),
 		c.handler.QueueAutoAck(),
 		c.handler.ExclusiveConsumer(),
@@ -129,12 +99,15 @@ func (c *RabbitMQConsumer) handleDeliveries(ctx context.Context, deliveries <-ch
 		//	zap.ByteString("body", d.Body),
 		//)
 
+		c.metric.ObserveMsgDelivered()
+
 		acknowledgement, err := c.handler.ReceiveMessage(ctx, d.Body)
 		if err != nil {
 			return stacktrace.Propagate(err, "handler returned error")
 		}
 
 		if c.handler.QueueAutoAck() {
+			c.metric.ObserveAck(true)
 			continue
 		}
 
@@ -142,35 +115,45 @@ func (c *RabbitMQConsumer) handleDeliveries(ctx context.Context, deliveries <-ch
 		case Ack:
 			err := d.Ack(false)
 			if err != nil {
+				c.metric.ObserveAck(false)
 				c.logger.Error("failed to ack message", zap.Error(err))
 
 				if c.handler.MustStopOnAckError() {
 					return stacktrace.Propagate(err, "stop consuming due to ack error")
 				}
+				continue
 			}
-			c.logger.Error("successful ack message")
+
+			c.metric.ObserveAck(true)
+			c.logger.Info("successful ack message")
 			continue
 		case Nack:
 			err := d.Nack(false, acknowledgement.Requeue)
 			if err != nil {
+				c.metric.ObserveNack(false)
 				c.logger.Error("failed to nack message", zap.Error(err))
 
 				if c.handler.MustStopOnNAckError() {
 					return stacktrace.Propagate(err, "stop consuming due to nack error")
 				}
+				continue
 			}
-			c.logger.Error("successful nack message")
+			c.metric.ObserveNack(true)
+			c.logger.Info("successful nack message")
 			continue
 		case Reject:
 			err := d.Reject(acknowledgement.Requeue)
 			if err != nil {
+				c.metric.ObserveReject(false)
 				c.logger.Error("failed to reject message", zap.Error(err))
 
 				if c.handler.MustStopOnRejectError() {
 					return stacktrace.Propagate(err, "stop consuming due to reject error")
 				}
+				continue
 			}
-			c.logger.Error("successful rejected message")
+			c.metric.ObserveReject(true)
+			c.logger.Info("successful rejected message")
 			continue
 		default:
 			return stacktrace.NewError("acknowledgement type not in predefined")
