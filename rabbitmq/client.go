@@ -50,7 +50,6 @@ type RabbitMQClient struct {
 	metric                Metric
 	connectRetryAttempts  int
 	initialReconnectDelay time.Duration
-	setup                 *Setup
 }
 
 func NewRabbitMQClient(ctx context.Context, config *ClientConfig) (*RabbitMQClient, error) {
