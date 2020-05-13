@@ -24,8 +24,10 @@ type Metric interface {
 	ObserveRabbitMQChanelConnection()
 
 	ObserveMsgDelivered()
-	ObserveSuccessfulAck()
-	ObserveFailedAck()
+	ObserveAck(success bool)
+	ObserveNack(success bool)
+	ObserveReject(success bool)
+	ObserveMsgPublish(success bool)
 }
 
 type NullMetric struct{}
@@ -37,5 +39,7 @@ func (n *NullMetric) ObserveRabbitMQChanelConnectionFailed() {}
 func (n *NullMetric) ObserveRabbitMQChanelConnectionRetry()  {}
 func (n *NullMetric) ObserveRabbitMQChanelConnection()       {}
 func (n *NullMetric) ObserveMsgDelivered()                   {}
-func (n *NullMetric) ObserveSuccessfulAck()                  {}
-func (n *NullMetric) ObserveFailedAck()                      {}
+func (n *NullMetric) ObserveAck(success bool)                {}
+func (n *NullMetric) ObserveNack(success bool)               {}
+func (n *NullMetric) ObserveReject(success bool)             {}
+func (n *NullMetric) ObserveMsgPublish(success bool)         {}

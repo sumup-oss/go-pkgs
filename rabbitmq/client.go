@@ -99,6 +99,34 @@ func NewRabbitMQClient(ctx context.Context, config *ClientConfig) (*RabbitMQClie
 	return client, nil
 }
 
+func (c *RabbitMQClient) ApplySetup(setup *Setup) error {
+	for _, e := range setup.Exchanges {
+		err := c.channel.ExchangeDeclare(e.Name, e.Kind, e.Durable, e.AutoDelete, e.Internal, e.NoWait, e.Args)
+		if err != nil {
+			return stacktrace.Propagate(err, "could not declare exchange")
+		}
+	}
+
+	for _, q := range setup.Queues {
+		_, err := c.channel.QueueDeclare(q.Name, q.Durable, q.AutoDelete, q.Exclusive, q.NoWait, q.Args)
+		if err != nil {
+			return stacktrace.Propagate(err, "could not declare queue")
+		}
+	}
+
+	for _, b := range setup.QueueBindings {
+		err := c.channel.QueueBind(b.Name, b.Key, b.Exchange, b.NoWait, b.Args)
+		if err != nil {
+			return stacktrace.Propagate(
+				err,
+				"could not create queue %s, exchange %s binding", b.Name, b.Exchange,
+			)
+		}
+	}
+
+	return nil
+}
+
 func (c *RabbitMQClient) Close() error {
 	err := c.conn.Close()
 	if err != nil {
