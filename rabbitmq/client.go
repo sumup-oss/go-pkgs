@@ -50,6 +50,7 @@ type RabbitMQClient struct {
 	metric                Metric
 	connectRetryAttempts  int
 	initialReconnectDelay time.Duration
+	notify                chan *amqp.Error
 }
 
 func NewRabbitMQClient(ctx context.Context, config *ClientConfig) (*RabbitMQClient, error) {
@@ -95,6 +96,8 @@ func NewRabbitMQClient(ctx context.Context, config *ClientConfig) (*RabbitMQClie
 		client.metric.ObserveRabbitMQChanelConnectionFailed()
 		return nil, stacktrace.Propagate(err, "couldn't create channel for rabbitmq")
 	}
+
+	client.notify = client.conn.NotifyClose(make(chan *amqp.Error))
 
 	return client, nil
 }

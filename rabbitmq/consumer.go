@@ -90,76 +90,78 @@ func (c *RabbitMQConsumer) Run(ctx context.Context) error {
 
 // nolint:gocognit
 func (c *RabbitMQConsumer) handleDeliveries(ctx context.Context, deliveries <-chan amqp.Delivery) error {
-	for d := range deliveries {
-		// nolint:godox
-		// TODO: until we add better logging level conditions
-		//c.logger.Debug(
-		//	"msg delivered",
-		//	zap.Uint64("tag", d.DeliveryTag),
-		//	zap.ByteString("body", d.Body),
-		//)
+	for {
+		select {
+		case d := <-deliveries:
+			// nolint:godox
+			// TODO: until we add better logging level conditions
+			//c.logger.Debug(
+			//	"msg delivered",
+			//	zap.Uint64("tag", d.DeliveryTag),
+			//	zap.ByteString("body", d.Body),
+			//)
 
-		c.metric.ObserveMsgDelivered()
+			c.metric.ObserveMsgDelivered()
 
-		acknowledgement, err := c.handler.ReceiveMessage(ctx, d.Body)
-		if err != nil {
-			return stacktrace.Propagate(err, "handler returned error")
-		}
-
-		if c.handler.QueueAutoAck() {
-			c.metric.ObserveAck(true)
-			continue
-		}
-
-		switch acknowledgement.Acknowledgement {
-		case Ack:
-			err := d.Ack(false)
+			acknowledgement, err := c.handler.ReceiveMessage(ctx, d.Body)
 			if err != nil {
-				c.metric.ObserveAck(false)
-				c.logger.Error("failed to ack message", zap.Error(err))
+				return stacktrace.Propagate(err, "handler returned error")
+			}
 
-				if c.handler.MustStopOnAckError() {
-					return stacktrace.Propagate(err, "stop consuming due to ack error")
-				}
+			if c.handler.QueueAutoAck() {
+				c.metric.ObserveAck(true)
 				continue
 			}
 
-			c.metric.ObserveAck(true)
-			c.logger.Info("successful ack message")
-			continue
-		case Nack:
-			err := d.Nack(false, acknowledgement.Requeue)
-			if err != nil {
-				c.metric.ObserveNack(false)
-				c.logger.Error("failed to nack message", zap.Error(err))
+			switch acknowledgement.Acknowledgement {
+			case Ack:
+				err := d.Ack(false)
+				if err != nil {
+					c.metric.ObserveAck(false)
+					c.logger.Error("failed to ack message", zap.Error(err))
 
-				if c.handler.MustStopOnNAckError() {
-					return stacktrace.Propagate(err, "stop consuming due to nack error")
+					if c.handler.MustStopOnAckError() {
+						return stacktrace.Propagate(err, "stop consuming due to ack error")
+					}
+					continue
 				}
-				continue
-			}
-			c.metric.ObserveNack(true)
-			c.logger.Info("successful nack message")
-			continue
-		case Reject:
-			err := d.Reject(acknowledgement.Requeue)
-			if err != nil {
-				c.metric.ObserveReject(false)
-				c.logger.Error("failed to reject message", zap.Error(err))
 
-				if c.handler.MustStopOnRejectError() {
-					return stacktrace.Propagate(err, "stop consuming due to reject error")
-				}
+				c.metric.ObserveAck(true)
+				c.logger.Info("successful ack message")
 				continue
+			case Nack:
+				err := d.Nack(false, acknowledgement.Requeue)
+				if err != nil {
+					c.metric.ObserveNack(false)
+					c.logger.Error("failed to nack message", zap.Error(err))
+
+					if c.handler.MustStopOnNAckError() {
+						return stacktrace.Propagate(err, "stop consuming due to nack error")
+					}
+					continue
+				}
+				c.metric.ObserveNack(true)
+				c.logger.Info("successful nack message")
+				continue
+			case Reject:
+				err := d.Reject(acknowledgement.Requeue)
+				if err != nil {
+					c.metric.ObserveReject(false)
+					c.logger.Error("failed to reject message", zap.Error(err))
+
+					if c.handler.MustStopOnRejectError() {
+						return stacktrace.Propagate(err, "stop consuming due to reject error")
+					}
+					continue
+				}
+				c.metric.ObserveReject(true)
+				c.logger.Info("successful rejected message")
+				continue
+			default:
+				return stacktrace.NewError("acknowledgement type not in predefined")
 			}
-			c.metric.ObserveReject(true)
-			c.logger.Info("successful rejected message")
-			continue
-		default:
-			return stacktrace.NewError("acknowledgement type not in predefined")
+		case notifyErr := <-c.client.notify:
+			return stacktrace.NewError("rabbitmq notified it stopped working, reason %s", notifyErr.Reason)
 		}
 	}
-
-	c.done <- true
-	return nil
 }
