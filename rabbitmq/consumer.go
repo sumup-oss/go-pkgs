@@ -90,9 +90,11 @@ func (c *RabbitMQConsumer) Run(ctx context.Context) error {
 
 // nolint:gocognit
 func (c *RabbitMQConsumer) handleDeliveries(ctx context.Context, deliveries <-chan amqp.Delivery) error {
-	for {
-		select {
-		case d := <-deliveries:
+	var deliveriesFinished = make(chan error)
+	defer close(deliveriesFinished)
+
+	go func() {
+		for d := range deliveries {
 			// nolint:godox
 			// TODO: until we add better logging level conditions
 			//c.logger.Debug(
@@ -105,7 +107,8 @@ func (c *RabbitMQConsumer) handleDeliveries(ctx context.Context, deliveries <-ch
 
 			acknowledgement, err := c.handler.ReceiveMessage(ctx, d.Body)
 			if err != nil {
-				return stacktrace.Propagate(err, "handler returned error")
+				deliveriesFinished <- stacktrace.Propagate(err, "handler returned error")
+				return
 			}
 
 			if c.handler.QueueAutoAck() {
@@ -121,7 +124,8 @@ func (c *RabbitMQConsumer) handleDeliveries(ctx context.Context, deliveries <-ch
 					c.logger.Error("failed to ack message", zap.Error(err))
 
 					if c.handler.MustStopOnAckError() {
-						return stacktrace.Propagate(err, "stop consuming due to ack error")
+						deliveriesFinished <- stacktrace.Propagate(err, "stop consuming due to ack error")
+						return
 					}
 					continue
 				}
@@ -136,7 +140,8 @@ func (c *RabbitMQConsumer) handleDeliveries(ctx context.Context, deliveries <-ch
 					c.logger.Error("failed to nack message", zap.Error(err))
 
 					if c.handler.MustStopOnNAckError() {
-						return stacktrace.Propagate(err, "stop consuming due to nack error")
+						deliveriesFinished <- stacktrace.Propagate(err, "stop consuming due to nack error")
+						return
 					}
 					continue
 				}
@@ -150,7 +155,8 @@ func (c *RabbitMQConsumer) handleDeliveries(ctx context.Context, deliveries <-ch
 					c.logger.Error("failed to reject message", zap.Error(err))
 
 					if c.handler.MustStopOnRejectError() {
-						return stacktrace.Propagate(err, "stop consuming due to reject error")
+						deliveriesFinished <- stacktrace.Propagate(err, "stop consuming due to reject error")
+						return
 					}
 					continue
 				}
@@ -158,10 +164,21 @@ func (c *RabbitMQConsumer) handleDeliveries(ctx context.Context, deliveries <-ch
 				c.logger.Info("successful rejected message")
 				continue
 			default:
-				return stacktrace.NewError("acknowledgement type not in predefined")
+				deliveriesFinished <- stacktrace.NewError("acknowledgement type not in predefined")
+				return
 			}
-		case notifyErr := <-c.client.notify:
-			return stacktrace.NewError("rabbitmq notified it stopped working, reason %s", notifyErr.Reason)
 		}
+		deliveriesFinished <- nil
+		return
+	}()
+
+	select {
+	case notifyErr := <-c.client.notify:
+		return stacktrace.NewError("rabbitmq notified it stopped working, reason %s", notifyErr.Reason)
+	case err := <-deliveriesFinished:
+		if err == nil {
+			c.done <- true
+		}
+		return err
 	}
 }
