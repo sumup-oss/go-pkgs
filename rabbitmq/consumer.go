@@ -169,7 +169,6 @@ func (c *RabbitMQConsumer) handleDeliveries(ctx context.Context, deliveries <-ch
 			}
 		}
 		deliveriesFinished <- nil
-		return
 	}()
 
 	select {
