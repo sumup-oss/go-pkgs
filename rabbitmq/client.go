@@ -25,18 +25,15 @@ import (
 	"github.com/streadway/amqp"
 )
 
-// ConnectionURI is the string used to connect to rabbitmq, amqp://
-//
-// Metric is an interface to collect metrics about the client and consumer
-// There is NullMetric struct if you want to skip them
-//
-// ConnectRetryAttempts number of attempts to try and dial the rabbitmq, and create a channel
-//
-// InitialReconnectDelay delay between each attempt
 type ClientConfig struct {
-	ConnectionURI         string
-	Metric                Metric
-	ConnectRetryAttempts  int
+	// ConnectionURI is the string used to connect to rabbitmq, e.g `amqp://...`
+	ConnectionURI string
+	// Metric is an interface to collect metrics about the client and consumer
+	// There is NullMetric struct if you want to skip them
+	Metric Metric
+	// ConnectRetryAttempts number of attempts to try and dial the rabbitmq, and create a channel
+	ConnectRetryAttempts int
+	// InitialReconnectDelay delay between each attempt
 	InitialReconnectDelay time.Duration
 }
 
@@ -80,6 +77,8 @@ func NewRabbitMQClient(ctx context.Context, config *ClientConfig) (*RabbitMQClie
 
 	// create rabbitmq channel
 	err = task.RetryUntil(config.ConnectRetryAttempts, config.InitialReconnectDelay, func(c context.Context) error {
+		// TODO: Move this to the consumer/producers.
+		// A client shouldn't have an active connection while there's no consuming/producing to do.
 		channel, channelErr := client.conn.Channel()
 		if channelErr != nil {
 			client.metric.ObserveRabbitMQChanelConnectionRetry()

@@ -34,6 +34,16 @@ type RabbitMQConsumer struct {
 	handler Handler
 	logger  logger.StructuredLogger
 	metric  Metric
+	cfg     ConsumerConfig
+}
+
+type ConsumerConfig struct {
+	// PrefetchCount configures how many in-flight "deliveries" are available to the consumer to ack/nack.
+	// ref: https://www.rabbitmq.com/consumer-prefetch.html
+	// There's no default value for the reason that it's very easy to misuse RMQ and have multiple consumers
+	// with too many deliveries in flight which results into badly distributed work load and high memory footprint
+	// of the consumers.
+	PrefetchCount int
 }
 
 func NewConsumer(
@@ -41,6 +51,7 @@ func NewConsumer(
 	handler Handler,
 	logger logger.StructuredLogger,
 	metric Metric,
+	cfg ConsumerConfig,
 ) *RabbitMQConsumer {
 	return &RabbitMQConsumer{
 		client:  client,
@@ -48,6 +59,7 @@ func NewConsumer(
 		handler: handler,
 		logger:  logger,
 		metric:  metric,
+		cfg:     cfg,
 	}
 }
 
@@ -68,6 +80,13 @@ func (c *RabbitMQConsumer) Run(ctx context.Context) error {
 
 	if ctx.Err() != nil {
 		return stacktrace.Propagate(ctx.Err(), "context canceled")
+	}
+
+	// HACK: Currently the channel is shared between clients, therefore a single client used by a producer and consumer
+	// will override each other's QOS. When the channel creation is moved to the consumer/producer this will be fixed.
+	err := c.client.channel.Qos(c.cfg.PrefetchCount,  0, false)
+	if err != nil {
+		return stacktrace.Propagate(err, "failed to set qos prefetch count to: %d", c.cfg.PrefetchCount)
 	}
 
 	deliveries, err := c.client.channel.Consume(
