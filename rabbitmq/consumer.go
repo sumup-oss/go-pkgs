@@ -26,15 +26,13 @@ import (
 	"github.com/streadway/amqp"
 )
 
-// A consumer that is works with Handler interface
-// It needs a RabbitMQClient to work with and is started with the Run() method
-type RabbitMQConsumer struct {
-	client  *RabbitMQClient
-	done    chan bool
-	handler Handler
-	logger  logger.StructuredLogger
-	metric  Metric
-	cfg     ConsumerConfig
+type Consumer struct {
+	client     *RabbitMQClient
+	shutdownCh chan bool
+	handler    Handler
+	logger     logger.StructuredLogger
+	metric     Metric
+	cfg        ConsumerConfig
 }
 
 type ConsumerConfig struct {
@@ -52,44 +50,61 @@ func NewConsumer(
 	logger logger.StructuredLogger,
 	metric Metric,
 	cfg ConsumerConfig,
-) *RabbitMQConsumer {
-	return &RabbitMQConsumer{
-		client:  client,
-		done:    make(chan bool),
-		handler: handler,
-		logger:  logger,
-		metric:  metric,
-		cfg:     cfg,
+) *Consumer {
+	return &Consumer{
+		client:     client,
+		shutdownCh: make(chan bool),
+		handler:    handler,
+		logger:     logger,
+		metric:     metric,
+		cfg:        cfg,
 	}
 }
 
-func (c *RabbitMQConsumer) Run(ctx context.Context) error {
+func (c *Consumer) Run(ctx context.Context) error {
+	channel, err := c.client.CreateChannel(ctx)
+	if err != nil {
+		return stacktrace.Propagate(err, "failed to create a RMQ channel")
+	}
+
+	ctx, cancelFunc := context.WithCancel(ctx)
+	closeCh := channel.NotifyClose(make(chan *amqp.Error))
+
 	go func() {
-		<-ctx.Done()
-		c.logger.Info("Received context cancel. Going to close rabbit connections.")
-		_ = c.client.channel.Cancel(c.handler.GetConsumerTag(), false)
+		select {
+		case rmqErr := <-closeCh:
+			cancelFunc()
+			c.logger.Warn(
+				"RMQ closed the connection",
+				zap.String("reason", rmqErr.Reason),
+				zap.Int("code", rmqErr.Code),
+				zap.Bool("recover", rmqErr.Recover),
+				zap.Bool("server", rmqErr.Server),
+			)
+		case <-ctx.Done():
+			c.logger.Info("Received context cancel. Going to close RMQ connections.")
+			_ = channel.Cancel(c.handler.GetConsumerTag(), false)
 
-		if !c.handler.WaitToConsumeInflight() {
-			c.client.channel.Close()
+			if !c.handler.WaitToConsumeInflight() {
+				_ = channel.Close()
+			}
+
+			<-c.shutdownCh
+			c.logger.Info("RMQ consumer stopped.")
+			_ = c.client.Close()
 		}
-
-		<-c.done
-		c.logger.Info("handler stopped")
-		_ = c.client.Close()
 	}()
 
 	if ctx.Err() != nil {
 		return stacktrace.Propagate(ctx.Err(), "context canceled")
 	}
 
-	// HACK: Currently the channel is shared between clients, therefore a single client used by a producer and consumer
-	// will override each other's QOS. When the channel creation is moved to the consumer/producer this will be fixed.
-	err := c.client.channel.Qos(c.cfg.PrefetchCount,  0, false)
+	err = channel.Qos(c.cfg.PrefetchCount,  0, false)
 	if err != nil {
-		return stacktrace.Propagate(err, "failed to set qos prefetch count to: %d", c.cfg.PrefetchCount)
+		return stacktrace.Propagate(err, "failed to set RMQ channel's QoS prefetch count to: %d", c.cfg.PrefetchCount)
 	}
 
-	deliveries, err := c.client.channel.Consume(
+	deliveries, err := channel.Consume(
 		c.handler.GetQueueName(),
 		c.handler.GetConsumerTag(),
 		c.handler.QueueAutoAck(),
@@ -99,27 +114,23 @@ func (c *RabbitMQConsumer) Run(ctx context.Context) error {
 		nil,
 	)
 	if err != nil {
-		return stacktrace.Propagate(err, "couldn't start consuming from channel")
+		return stacktrace.Propagate(err, "couldn't start consuming from RMQ channel")
 	}
 
 	err = c.handleDeliveries(ctx, deliveries)
-
-	return stacktrace.Propagate(err, "stopped consumer")
+	return stacktrace.Propagate(err, "failed/stopped handling RMQ consumer deliveries")
 }
 
 // nolint:gocognit
-func (c *RabbitMQConsumer) handleDeliveries(ctx context.Context, deliveries <-chan amqp.Delivery) error {
+func (c *Consumer) handleDeliveries(
+	ctx context.Context,
+	deliveries <-chan amqp.Delivery,
+) error {
 	for d := range deliveries {
-		// nolint:godox
-		// TODO: until we add better logging level conditions
-		//c.logger.Debug(
-		//	"msg delivered",
-		//	zap.Uint64("tag", d.DeliveryTag),
-		//	zap.ByteString("body", d.Body),
-		//)
-
 		c.metric.ObserveMsgDelivered()
 
+		// NOTE: Context is intentionally passed and left to the `ReceiveMessage` func hook to determine how to handle it
+		// and start a graceful shutdown procedure.
 		acknowledgement, err := c.handler.ReceiveMessage(ctx, d.Body)
 		if err != nil {
 			return stacktrace.Propagate(err, "handler returned error")
@@ -179,6 +190,6 @@ func (c *RabbitMQConsumer) handleDeliveries(ctx context.Context, deliveries <-ch
 		}
 	}
 
-	c.done <- true
+	c.shutdownCh <- true
 	return nil
 }

@@ -43,25 +43,25 @@ type ClientConfig struct {
 type RabbitMQClient struct {
 	amqpURI               string
 	conn                  *amqp.Connection
-	channel               *amqp.Channel
 	metric                Metric
 	connectRetryAttempts  int
 	initialReconnectDelay time.Duration
+	cfg *ClientConfig
 }
 
-func NewRabbitMQClient(ctx context.Context, config *ClientConfig) (*RabbitMQClient, error) {
+func NewRabbitMQClient(ctx context.Context, cfg *ClientConfig) (*RabbitMQClient, error) {
 	client := &RabbitMQClient{
-		amqpURI:               config.ConnectionURI,
-		metric:                config.Metric,
-		connectRetryAttempts:  config.ConnectRetryAttempts,
-		initialReconnectDelay: config.InitialReconnectDelay,
+		amqpURI:               cfg.ConnectionURI,
+		metric:                cfg.Metric,
+		connectRetryAttempts:  cfg.ConnectRetryAttempts,
+		initialReconnectDelay: cfg.InitialReconnectDelay,
+		cfg:                   cfg,
 	}
 
-	// dial rabbitmq
-	err := task.RetryUntil(config.ConnectRetryAttempts, config.InitialReconnectDelay, func(c context.Context) error {
+	err := task.RetryUntil(cfg.ConnectRetryAttempts, cfg.InitialReconnectDelay, func(c context.Context) error {
 		conn, dialErr := amqp.Dial(client.amqpURI)
 		if dialErr != nil {
-			config.Metric.ObserveRabbitMQConnectionRetry()
+			cfg.Metric.ObserveRabbitMQConnectionRetry()
 			return task.NewRetryableError(dialErr)
 		}
 
@@ -75,50 +75,59 @@ func NewRabbitMQClient(ctx context.Context, config *ClientConfig) (*RabbitMQClie
 		return nil, stacktrace.Propagate(err, "couldn't dial rabbitmq")
 	}
 
-	// create rabbitmq channel
-	err = task.RetryUntil(config.ConnectRetryAttempts, config.InitialReconnectDelay, func(c context.Context) error {
-		// TODO: Move this to the consumer/producers.
-		// A client shouldn't have an active connection while there's no consuming/producing to do.
-		channel, channelErr := client.conn.Channel()
+	return client, nil
+}
+
+func (c *RabbitMQClient) CreateChannel(ctx context.Context) (*amqp.Channel, error) {
+	var channel *amqp.Channel
+
+	err := task.RetryUntil(c.cfg.ConnectRetryAttempts, c.cfg.InitialReconnectDelay, func(ctx context.Context) error {
+		var channelErr error
+
+		channel, channelErr = c.conn.Channel()
 		if channelErr != nil {
-			client.metric.ObserveRabbitMQChanelConnectionRetry()
+			c.metric.ObserveRabbitMQChanelConnectionRetry()
 			return task.NewRetryableError(channelErr)
 		}
 
-		client.channel = channel
-		client.metric.ObserveRabbitMQChanelConnection()
+		c.metric.ObserveRabbitMQChanelConnection()
 		return nil
 	})(ctx)
 
 	if err != nil {
-		client.metric.ObserveRabbitMQChanelConnectionFailed()
+		c.metric.ObserveRabbitMQChanelConnectionFailed()
 		return nil, stacktrace.Propagate(err, "couldn't create channel for rabbitmq")
 	}
 
-	return client, nil
+	return channel, nil
 }
 
-func (c *RabbitMQClient) ApplySetup(setup *Setup) error {
+func (c *RabbitMQClient) Setup(ctx context.Context, setup *Setup) error {
+	channel, err := c.CreateChannel(ctx)
+	if err != nil {
+		return stacktrace.Propagate(err, "failed to create a RMQ channel")
+	}
+
 	for _, e := range setup.Exchanges {
-		err := c.channel.ExchangeDeclare(e.Name, e.Kind, e.Durable, e.AutoDelete, e.Internal, e.NoWait, e.Args)
+		err := channel.ExchangeDeclare(e.Name, e.Kind, e.Durable, e.AutoDelete, e.Internal, e.NoWait, e.Args)
 		if err != nil {
 			return stacktrace.Propagate(err, "could not declare exchange")
 		}
 	}
 
 	for _, q := range setup.Queues {
-		_, err := c.channel.QueueDeclare(q.Name, q.Durable, q.AutoDelete, q.Exclusive, q.NoWait, q.Args)
+		_, err := channel.QueueDeclare(q.Name, q.Durable, q.AutoDelete, q.Exclusive, q.NoWait, q.Args)
 		if err != nil {
 			return stacktrace.Propagate(err, "could not declare queue")
 		}
 	}
 
 	for _, b := range setup.QueueBindings {
-		err := c.channel.QueueBind(b.Name, b.Key, b.Exchange, b.NoWait, b.Args)
+		err := channel.QueueBind(b.Name, b.Key, b.Exchange, b.NoWait, b.Args)
 		if err != nil {
 			return stacktrace.Propagate(
 				err,
-				"could not create queue %s, exchange %s binding", b.Name, b.Exchange,
+				"could not bind queue %s to exchange %s", b.Name, b.Exchange,
 			)
 		}
 	}
@@ -128,9 +137,5 @@ func (c *RabbitMQClient) ApplySetup(setup *Setup) error {
 
 func (c *RabbitMQClient) Close() error {
 	err := c.conn.Close()
-	if err != nil {
-		return stacktrace.Propagate(err, "AMQP connection close")
-	}
-
-	return nil
+	return stacktrace.Propagate(err, "RMQ connection close")
 }
