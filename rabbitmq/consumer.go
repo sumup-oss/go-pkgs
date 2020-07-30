@@ -26,15 +26,6 @@ import (
 	"github.com/streadway/amqp"
 )
 
-type Consumer struct {
-	client     *RabbitMQClient
-	shutdownCh chan bool
-	handler    Handler
-	logger     logger.StructuredLogger
-	metric     Metric
-	cfg        ConsumerConfig
-}
-
 type ConsumerConfig struct {
 	// PrefetchCount configures how many in-flight "deliveries" are available to the consumer to ack/nack.
 	// ref: https://www.rabbitmq.com/consumer-prefetch.html
@@ -42,6 +33,14 @@ type ConsumerConfig struct {
 	// with too many deliveries in flight which results into badly distributed work load and high memory footprint
 	// of the consumers.
 	PrefetchCount int
+}
+
+type Consumer struct {
+	client  *RabbitMQClient
+	handler Handler
+	logger  logger.StructuredLogger
+	metric  Metric
+	cfg     ConsumerConfig
 }
 
 func NewConsumer(
@@ -52,12 +51,11 @@ func NewConsumer(
 	cfg ConsumerConfig,
 ) *Consumer {
 	return &Consumer{
-		client:     client,
-		shutdownCh: make(chan bool),
-		handler:    handler,
-		logger:     logger,
-		metric:     metric,
-		cfg:        cfg,
+		client:  client,
+		handler: handler,
+		logger:  logger,
+		metric:  metric,
+		cfg:     cfg,
 	}
 }
 
@@ -68,6 +66,8 @@ func (c *Consumer) Run(ctx context.Context) error {
 	}
 
 	ctx, cancelFunc := context.WithCancel(ctx)
+	defer cancelFunc()
+
 	closeCh := channel.NotifyClose(make(chan *amqp.Error))
 
 	go func() {
@@ -81,6 +81,7 @@ func (c *Consumer) Run(ctx context.Context) error {
 				zap.Bool("recover", rmqErr.Recover),
 				zap.Bool("server", rmqErr.Server),
 			)
+			return
 		case <-ctx.Done():
 			c.logger.Info("Received context cancel. Going to close RMQ connections.")
 			_ = channel.Cancel(c.handler.GetConsumerTag(), false)
@@ -89,7 +90,6 @@ func (c *Consumer) Run(ctx context.Context) error {
 				_ = channel.Close()
 			}
 
-			<-c.shutdownCh
 			c.logger.Info("RMQ consumer stopped.")
 			_ = c.client.Close()
 		}
@@ -99,7 +99,7 @@ func (c *Consumer) Run(ctx context.Context) error {
 		return stacktrace.Propagate(ctx.Err(), "context canceled")
 	}
 
-	err = channel.Qos(c.cfg.PrefetchCount,  0, false)
+	err = channel.Qos(c.cfg.PrefetchCount, 0, false)
 	if err != nil {
 		return stacktrace.Propagate(err, "failed to set RMQ channel's QoS prefetch count to: %d", c.cfg.PrefetchCount)
 	}
@@ -126,70 +126,84 @@ func (c *Consumer) handleDeliveries(
 	ctx context.Context,
 	deliveries <-chan amqp.Delivery,
 ) error {
-	for d := range deliveries {
-		c.metric.ObserveMsgDelivered()
-
-		// NOTE: Context is intentionally passed and left to the `ReceiveMessage` func hook to determine how to handle it
-		// and start a graceful shutdown procedure.
-		acknowledgement, err := c.handler.ReceiveMessage(ctx, d.Body)
-		if err != nil {
-			return stacktrace.Propagate(err, "handler returned error")
-		}
-
-		if c.handler.QueueAutoAck() {
-			c.metric.ObserveAck(true)
-			continue
-		}
-
-		switch acknowledgement.Acknowledgement {
-		case Ack:
-			err := d.Ack(false)
+	for {
+		select {
+		case <-ctx.Done():
+			c.logger.Warn("RMQ handler stopping")
+			return nil
+		case d := <-deliveries:
+			err := c.handleSingleDelivery(ctx, &d)
 			if err != nil {
-				c.metric.ObserveAck(false)
-				c.logger.Error("failed to ack message", zap.Error(err))
-
-				if c.handler.MustStopOnAckError() {
-					return stacktrace.Propagate(err, "stop consuming due to ack error")
-				}
-				continue
+				return stacktrace.Propagate(err, "failed to process RMQ delivery")
 			}
-
-			c.metric.ObserveAck(true)
-			c.logger.Info("successful ack message")
-			continue
-		case Nack:
-			err := d.Nack(false, acknowledgement.Requeue)
-			if err != nil {
-				c.metric.ObserveNack(false)
-				c.logger.Error("failed to nack message", zap.Error(err))
-
-				if c.handler.MustStopOnNAckError() {
-					return stacktrace.Propagate(err, "stop consuming due to nack error")
-				}
-				continue
-			}
-			c.metric.ObserveNack(true)
-			c.logger.Info("successful nack message")
-			continue
-		case Reject:
-			err := d.Reject(acknowledgement.Requeue)
-			if err != nil {
-				c.metric.ObserveReject(false)
-				c.logger.Error("failed to reject message", zap.Error(err))
-
-				if c.handler.MustStopOnRejectError() {
-					return stacktrace.Propagate(err, "stop consuming due to reject error")
-				}
-				continue
-			}
-			c.metric.ObserveReject(true)
-			c.logger.Info("successful rejected message")
-			continue
-		default:
-			return stacktrace.NewError("acknowledgement type not in predefined")
 		}
 	}
+}
 
-	c.shutdownCh <- true
-	return nil
+func (c *Consumer) handleSingleDelivery(ctx context.Context, d *amqp.Delivery) error {
+	c.metric.ObserveMsgDelivered()
+
+	acknowledgement, err := c.handler.ReceiveMessage(ctx, d.Body)
+	if err != nil {
+		return stacktrace.Propagate(err, "handler returned error")
+	}
+
+	if c.handler.QueueAutoAck() {
+		c.metric.ObserveAck(true)
+		return nil
+	}
+
+	switch acknowledgement.Acknowledgement {
+	case Ack:
+		err := d.Ack(false)
+		if err != nil {
+			c.metric.ObserveAck(false)
+			c.logger.Error("failed to ack message", zap.Error(err))
+
+			if c.handler.MustStopOnAckError() {
+				return stacktrace.Propagate(err, "stop consuming due to ack error")
+			}
+
+			return nil
+		}
+
+		c.metric.ObserveAck(true)
+		c.logger.Info("successful ack message")
+		return nil
+	case Nack:
+		err := d.Nack(false, acknowledgement.Requeue)
+		if err != nil {
+			c.metric.ObserveNack(false)
+			c.logger.Error("failed to nack message", zap.Error(err))
+
+			if c.handler.MustStopOnNAckError() {
+				return stacktrace.Propagate(err, "stop consuming due to nack error")
+			}
+
+			return nil
+		}
+
+		c.metric.ObserveNack(true)
+		c.logger.Info("successful nack message")
+
+		return nil
+	case Reject:
+		err := d.Reject(acknowledgement.Requeue)
+		if err != nil {
+			c.metric.ObserveReject(false)
+			c.logger.Error("failed to reject message", zap.Error(err))
+
+			if c.handler.MustStopOnRejectError() {
+				return stacktrace.Propagate(err, "stop consuming due to reject error")
+			}
+
+			return nil
+		}
+		c.metric.ObserveReject(true)
+		c.logger.Info("successful rejected message")
+
+		return nil
+	default:
+		return stacktrace.NewError("acknowledgement type not in predefined")
+	}
 }

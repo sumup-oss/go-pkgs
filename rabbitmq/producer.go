@@ -25,27 +25,27 @@ import (
 )
 
 type Producer struct {
-	client *RabbitMQClient
-	logger logger.StructuredLogger
-	metric Metric
+	client  *RabbitMQClient
+	logger  logger.StructuredLogger
+	metric  Metric
 	channel *amqp.Channel
 
-	closeCh chan *amqp.Error
+	closeCh  chan *amqp.Error
 	isClosed bool
 }
 
 func NewProducer(client *RabbitMQClient, logger logger.StructuredLogger, metric Metric) (*Producer, error) {
-	channel, err  := client.CreateChannel(context.TODO())
+	channel, err := client.CreateChannel(context.TODO())
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "failed to create a channel")
 	}
 
 	return &Producer{
-		client: client,
-		logger: logger,
-		metric: metric,
-		channel: channel,
-		closeCh: channel.NotifyClose(make(chan *amqp.Error)),
+		client:   client,
+		logger:   logger,
+		metric:   metric,
+		channel:  channel,
+		closeCh:  channel.NotifyClose(make(chan *amqp.Error)),
 		isClosed: false,
 	}, nil
 }
