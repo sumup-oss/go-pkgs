@@ -66,6 +66,8 @@ linters:
     - wsl
     # NOTE: Pointless.
     - funlen
+    # NOTE: `TODO` comments are not offences.
+    - godox
 issues:
   exclude-rules:
     - text: "weak cryptographic primitive"
