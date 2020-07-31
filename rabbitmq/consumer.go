@@ -16,6 +16,7 @@ package rabbitmq
 
 import (
 	"context"
+	"sync"
 
 	"github.com/palantir/stacktrace"
 
@@ -41,6 +42,7 @@ type Consumer struct {
 	logger  logger.StructuredLogger
 	metric  Metric
 	cfg     ConsumerConfig
+	stopWg  sync.WaitGroup
 }
 
 func NewConsumer(
@@ -56,6 +58,7 @@ func NewConsumer(
 		logger:  logger,
 		metric:  metric,
 		cfg:     cfg,
+		stopWg:  sync.WaitGroup{},
 	}
 }
 
@@ -84,11 +87,18 @@ func (c *Consumer) Run(ctx context.Context) error {
 			return
 		case <-ctx.Done():
 			c.logger.Info("Received context cancel. Going to close RMQ connections.")
-			_ = channel.Cancel(c.handler.GetConsumerTag(), false)
-
-			if !c.handler.WaitToConsumeInflight() {
-				_ = channel.Close()
+			err = channel.Cancel(c.handler.GetConsumerTag(), false)
+			if err != nil {
+				c.logger.Warn("failed to cancel the RMQ channel while stopping handler", logger.ErrorField(err))
 			}
+
+			// NOTE: We must process the events before we close the channel
+			// otherwise we cant ACK/NACK.
+			if c.handler.WaitToConsumeInflight() {
+				c.stopWg.Wait()
+			}
+
+			_ = channel.Close()
 
 			c.logger.Info("RMQ consumer stopped.")
 			_ = c.client.Close()
@@ -132,7 +142,10 @@ func (c *Consumer) handleDeliveries(
 			c.logger.Warn("RMQ handler stopping")
 			return nil
 		case d := <-deliveries:
+			// TODO: Add option to parallelize processing
+			c.stopWg.Add(1)
 			err := c.handleSingleDelivery(ctx, &d)
+			c.stopWg.Done()
 			if err != nil {
 				return stacktrace.Propagate(err, "failed to process RMQ delivery")
 			}
