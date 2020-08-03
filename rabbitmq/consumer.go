@@ -140,8 +140,13 @@ func (c *Consumer) handleDeliveries(
 		select {
 		case <-ctx.Done():
 			c.logger.Warn("RMQ handler stopping")
-			return nil
-		case d := <-deliveries:
+			return ctx.Err()
+		case d, hasMore := <-deliveries:
+			if !hasMore {
+				c.logger.Warn("RMQ handler deliveries channel closed.")
+				continue
+			}
+
 			// TODO: Add option to parallelize processing
 			c.stopWg.Add(1)
 			err := c.handleSingleDelivery(ctx, &d)
