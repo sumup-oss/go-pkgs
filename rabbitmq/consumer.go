@@ -144,7 +144,7 @@ func (c *Consumer) handleDeliveries(
 		case d, hasMore := <-deliveries:
 			if !hasMore {
 				c.logger.Warn("RMQ handler deliveries channel closed.")
-				continue
+				return stacktrace.NewError("RMQ handler deliveries channel closed.")
 			}
 
 			// TODO: Add option to parallelize processing
