@@ -390,6 +390,82 @@ func TestDocker_Build(t *testing.T) {
 		},
 	)
 
+	t.Run(
+		"when buildings succeeds and `options.CacheFrom` have exactly one cache from image, "+
+			"it docker builds specified file, adds the cache from image and tags to specified tag",
+		func(t *testing.T) {
+			executorArg := &ostest.FakeOsExecutor{}
+
+			optionsArg := &DockerBuildOptions{
+				File:       "./examplefile",
+				CacheFrom:  []string{"example-image:tag"},
+				ContextDir: ".",
+				Tag:        "mytag",
+			}
+
+			executorArg.On(
+				"ExecuteContext",
+				context.Background(),
+				"docker",
+				[]string{
+					"build",
+					"-f",
+					optionsArg.File,
+					"--tag",
+					optionsArg.Tag,
+					"--cache-from",
+					optionsArg.CacheFrom[0],
+					optionsArg.ContextDir,
+				},
+				[]string(nil),
+				"",
+			).Return([]byte{}, []byte{}, nil)
+
+			dockerInstance := NewDocker(executorArg)
+			actual := dockerInstance.Build(context.Background(), optionsArg)
+			require.Nil(t, actual)
+		},
+	)
+
+	t.Run(
+		"when buildings succeeds and `options.CacheFrom` have more than one cache from image, "+
+			"it docker builds specified file, adds the cache from image and tags to specified tag",
+		func(t *testing.T) {
+			executorArg := &ostest.FakeOsExecutor{}
+
+			optionsArg := &DockerBuildOptions{
+				File:       "./examplefile",
+				CacheFrom:  []string{"example-image:tag1", "example-image:tag2"},
+				ContextDir: ".",
+				Tag:        "mytag",
+			}
+
+			executorArg.On(
+				"ExecuteContext",
+				context.Background(),
+				"docker",
+				[]string{
+					"build",
+					"-f",
+					optionsArg.File,
+					"--tag",
+					optionsArg.Tag,
+					"--cache-from",
+					optionsArg.CacheFrom[0],
+					"--cache-from",
+					optionsArg.CacheFrom[1],
+					optionsArg.ContextDir,
+				},
+				[]string(nil),
+				"",
+			).Return([]byte{}, []byte{}, nil)
+
+			dockerInstance := NewDocker(executorArg)
+			actual := dockerInstance.Build(context.Background(), optionsArg)
+			require.Nil(t, actual)
+		},
+	)
+
 }
 
 func TestDocker_Login(t *testing.T) {
