@@ -38,6 +38,7 @@ type DockerBuildOptions struct {
 	File       string
 	Tag        string
 	Target     string
+	CacheFrom  []string
 	ContextDir string
 }
 
@@ -82,6 +83,12 @@ func (docker *Docker) buildArgs(options *DockerBuildOptions) []string {
 
 	if options.Target != "" {
 		args = append(args, "--target", options.Target)
+	}
+
+	if options.CacheFrom != nil {
+		for _, cacheFrom := range options.CacheFrom {
+			args = append(args, "--cache-from", cacheFrom)
+		}
 	}
 
 	if options.Hosts != nil {
