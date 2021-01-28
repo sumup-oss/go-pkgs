@@ -16,6 +16,7 @@ package executor
 
 import (
 	"bytes"
+	"context"
 	"io"
 
 	"github.com/sumup-oss/go-pkgs/os"
@@ -47,6 +48,22 @@ func (executor *RealtimeStdoutExecutor) Execute(
 	stderr := NewBufferedWriter(executor.Stderr())
 
 	err := executor.ExecuteWithStreams(cmd, arg, env, dir, stdout, stderr)
+
+	return stdout.Bytes(), stderr.Bytes(), err
+}
+
+// ExecuteContext executes a command within a context.
+func (executor *RealtimeStdoutExecutor) ExecuteContext(
+	ctx context.Context,
+	cmd string,
+	arg []string,
+	env []string,
+	dir string,
+) ([]byte, []byte, error) {
+	stdout := NewBufferedWriter(executor.Stdout())
+	stderr := NewBufferedWriter(executor.Stderr())
+
+	err := executor.ExecuteWithStreamsContext(ctx, cmd, arg, env, dir, stdout, stderr)
 
 	return stdout.Bytes(), stderr.Bytes(), err
 }
