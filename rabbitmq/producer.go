@@ -61,13 +61,19 @@ func (p *Producer) Publish(
 ) error {
 	select {
 	case rmqErr := <-p.closeCh:
-		p.logger.Warn(
-			"RMQ closed the connection",
-			zap.String("reason", rmqErr.Reason),
-			zap.Int("code", rmqErr.Code),
-			zap.Bool("recover", rmqErr.Recover),
-			zap.Bool("server", rmqErr.Server),
-		)
+		if rmqErr != nil {
+			p.logger.Warn(
+				"RMQ closed the connection",
+				zap.String("reason", rmqErr.Reason),
+				zap.Int("code", rmqErr.Code),
+				zap.Bool("recover", rmqErr.Recover),
+				zap.Bool("server", rmqErr.Server),
+			)
+		} else {
+			p.logger.Warn(
+				"RMQ closed the connection with nil rmqErr",
+			)
+		}
 		p.isClosed = true
 	default:
 		if p.isClosed {
