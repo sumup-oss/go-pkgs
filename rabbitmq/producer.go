@@ -71,7 +71,7 @@ func (p *Producer) Publish(
 			)
 		} else {
 			p.logger.Warn(
-				"RMQ closed the connection with nil rmqErr",
+				"RMQ closed the connection without an error",
 			)
 		}
 		p.isClosed = true
