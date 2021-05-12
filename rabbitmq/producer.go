@@ -16,6 +16,7 @@ package rabbitmq
 
 import (
 	"context"
+	"errors"
 
 	"github.com/palantir/stacktrace"
 	"github.com/streadway/amqp"
@@ -23,6 +24,8 @@ import (
 
 	"github.com/sumup-oss/go-pkgs/logger"
 )
+
+var ProducerError = errors.New("RMQ producer has already closed the connection")
 
 type Producer struct {
 	client  *RabbitMQClient
@@ -77,7 +80,7 @@ func (p *Producer) Publish(
 		p.isClosed = true
 	default:
 		if p.isClosed {
-			return stacktrace.NewError("RMQ producer has already closed the connection")
+			return stacktrace.Propagate(ProducerError, "RabbitMQ connection closed")
 		}
 
 		err := p.channel.Publish(
