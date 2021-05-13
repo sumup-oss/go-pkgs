@@ -79,6 +79,7 @@ func (p *PersistentProducer) unsafeReconnect(ctx context.Context) {
 			client, err := NewRabbitMQClient(ctx, p.rabbitClientCfg)
 			if err != nil {
 				p.producer.logger.Warn("RabbitMQ Failed to init client", zap.Error(err))
+
 				select {
 				case <-ctx.Done():
 					p.producer.logger.Info("received shut down signal")
