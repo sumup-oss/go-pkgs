@@ -27,17 +27,15 @@ import (
 )
 
 type PersistentProducer struct {
-	producer          *Producer
-	mu                sync.RWMutex
-	reconnectTimeout  time.Duration
-	rabbitClientCfg   *ClientConfig
-	rabbitClientSetup *Setup
+	producer         *Producer
+	mu               sync.RWMutex
+	reconnectTimeout time.Duration
+	rabbitClientCfg  *ClientConfig
 }
 
 func NewPersistentProducer(
 	ctx context.Context,
 	client *RabbitMQClient,
-	setup *Setup,
 	logger logger.StructuredLogger,
 	metric Metric,
 	reconnectTimeout time.Duration,
@@ -48,10 +46,9 @@ func NewPersistentProducer(
 	}
 
 	persistentProducer := &PersistentProducer{
-		producer:          producer,
-		reconnectTimeout:  reconnectTimeout,
-		rabbitClientCfg:   client.cfg,
-		rabbitClientSetup: setup,
+		producer:         producer,
+		reconnectTimeout: reconnectTimeout,
+		rabbitClientCfg:  client.cfg,
 	}
 
 	go persistentProducer.unsafeReconnect(ctx)

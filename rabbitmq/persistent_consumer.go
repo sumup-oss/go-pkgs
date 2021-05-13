@@ -25,16 +25,14 @@ import (
 )
 
 type PersistentConsumer struct {
-	consumer          *Consumer
-	mu                sync.Mutex
-	reconnectTimeout  time.Duration
-	rabbitClientCfg   *ClientConfig
-	rabbitClientSetup *Setup
+	consumer         *Consumer
+	mu               sync.Mutex
+	reconnectTimeout time.Duration
+	rabbitClientCfg  *ClientConfig
 }
 
 func NewPersistentConsumer(
 	client *RabbitMQClient,
-	setup *Setup,
 	handler Handler,
 	logger logger.StructuredLogger,
 	metric Metric,
@@ -44,11 +42,10 @@ func NewPersistentConsumer(
 	consumer := NewConsumer(client, handler, logger, metric, cfg)
 
 	return &PersistentConsumer{
-		consumer:          consumer,
-		mu:                sync.Mutex{},
-		reconnectTimeout:  reconnectTimeout,
-		rabbitClientCfg:   client.cfg,
-		rabbitClientSetup: setup,
+		consumer:         consumer,
+		mu:               sync.Mutex{},
+		reconnectTimeout: reconnectTimeout,
+		rabbitClientCfg:  client.cfg,
 	}
 }
 
@@ -62,20 +59,6 @@ StartEstablishConnection:
 	client, err := NewRabbitMQClient(ctx, c.rabbitClientCfg)
 	if err != nil {
 		c.consumer.logger.Warn("RabbitMQ Failed to init client")
-
-		select {
-		case <-ctx.Done():
-			c.consumer.logger.Info("received shut down signal")
-			return nil
-		case <-time.After(c.reconnectTimeout):
-			goto StartEstablishConnection
-		}
-	}
-
-	c.consumer.logger.Info("created a new rabbit client")
-	err = client.Setup(ctx, c.rabbitClientSetup)
-	if err != nil {
-		c.consumer.logger.Warn("RabbitMQ Failed to setup client")
 
 		select {
 		case <-ctx.Done():
