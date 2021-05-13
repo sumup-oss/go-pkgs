@@ -21,11 +21,11 @@ type PersistentProducer struct {
 }
 
 func NewPersistentProducer(
+	ctx context.Context,
 	client *RabbitMQClient,
 	setup *Setup,
 	logger logger.StructuredLogger,
 	metric Metric,
-	ctx context.Context,
 	reconnectTimeout time.Duration,
 ) (*PersistentProducer, error) {
 	producer, err := NewProducer(client, logger, metric)
@@ -72,7 +72,6 @@ func (p *PersistentProducer) unsafeReconnect(ctx context.Context) {
 	for {
 		select {
 		case <-ctx.Done():
-			// TODO: log that it's canceled
 			p.producer.logger.Info("received shut down signal")
 			return
 		case <-p.producer.closeCh:

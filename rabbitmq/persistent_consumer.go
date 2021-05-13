@@ -41,14 +41,7 @@ func NewPersistentConsumer(
 	cfg ConsumerConfig,
 	reconnectTimeout time.Duration,
 ) *PersistentConsumer {
-	consumer := &Consumer{
-		client:  client,
-		handler: handler,
-		logger:  logger,
-		metric:  metric,
-		cfg:     cfg,
-		stopWg:  sync.WaitGroup{},
-	}
+	consumer := NewConsumer(client, handler, logger, metric, cfg)
 
 	return &PersistentConsumer{
 		consumer:          consumer,
@@ -64,7 +57,6 @@ func (c *PersistentConsumer) Run(ctx context.Context) error {
 	defer c.mu.Unlock()
 
 StartEstablishConnection:
-	// TODO: Add retries/sleep
 	c.consumer.logger.Info("RabbitMQ consumer Run StartEstablishConnection")
 
 	client, err := NewRabbitMQClient(ctx, c.rabbitClientCfg)
@@ -86,7 +78,6 @@ StartEstablishConnection:
 
 	select {
 	case <-ctx.Done():
-		// TODO: log that it's canceled
 		c.consumer.logger.Info("received shut down signal")
 		return nil
 	default:
@@ -94,7 +85,6 @@ StartEstablishConnection:
 		err := c.consumer.Run(ctx)
 		if err != nil {
 			c.consumer.logger.Error("RabbitMQ consumer Run error", zap.Error(err))
-			// TODO: if max retries exhausted - exit
 			time.Sleep(c.reconnectTimeout)
 			goto StartEstablishConnection
 		}
