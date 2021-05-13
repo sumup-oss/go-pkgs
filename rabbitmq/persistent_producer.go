@@ -79,23 +79,40 @@ func (p *PersistentProducer) unsafeReconnect(ctx context.Context) {
 			client, err := NewRabbitMQClient(ctx, p.rabbitClientCfg)
 			if err != nil {
 				p.producer.logger.Warn("RabbitMQ Failed to init client", zap.Error(err))
-				time.Sleep(p.reconnectTimeout)
-				continue
+				select {
+				case <-ctx.Done():
+					p.producer.logger.Info("received shut down signal")
+					return
+				case <-time.After(p.reconnectTimeout):
+					continue
+				}
 			}
 
 			p.producer.logger.Info("created a new rabbit client")
 			err = client.Setup(ctx, p.rabbitClientSetup)
 			if err != nil {
 				p.producer.logger.Warn("RabbitMQ Failed to setup client", zap.Error(err))
-				time.Sleep(p.reconnectTimeout)
-				continue
+
+				select {
+				case <-ctx.Done():
+					p.producer.logger.Info("received shut down signal")
+					return
+				case <-time.After(p.reconnectTimeout):
+					continue
+				}
 			}
 
 			producer, err := NewProducer(client, p.producer.logger, p.producer.metric)
 			if err != nil {
 				p.producer.logger.Warn("RabbitMQ Failed to create new producer", zap.Error(err))
-				time.Sleep(p.reconnectTimeout)
-				continue
+
+				select {
+				case <-ctx.Done():
+					p.producer.logger.Info("received shut down signal")
+					return
+				case <-time.After(p.reconnectTimeout):
+					continue
+				}
 			}
 
 			p.mu.Lock()

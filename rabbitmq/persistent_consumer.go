@@ -62,16 +62,28 @@ StartEstablishConnection:
 	client, err := NewRabbitMQClient(ctx, c.rabbitClientCfg)
 	if err != nil {
 		c.consumer.logger.Warn("RabbitMQ Failed to init client")
-		time.Sleep(c.reconnectTimeout)
-		goto StartEstablishConnection
+
+		select {
+		case <-ctx.Done():
+			c.consumer.logger.Info("received shut down signal")
+			return nil
+		case <-time.After(c.reconnectTimeout):
+			goto StartEstablishConnection
+		}
 	}
 
 	c.consumer.logger.Info("created a new rabbit client")
 	err = client.Setup(ctx, c.rabbitClientSetup)
 	if err != nil {
 		c.consumer.logger.Warn("RabbitMQ Failed to setup client")
-		time.Sleep(c.reconnectTimeout)
-		goto StartEstablishConnection
+
+		select {
+		case <-ctx.Done():
+			c.consumer.logger.Info("received shut down signal")
+			return nil
+		case <-time.After(c.reconnectTimeout):
+			goto StartEstablishConnection
+		}
 	}
 
 	c.consumer.client = client
@@ -85,8 +97,14 @@ StartEstablishConnection:
 		err := c.consumer.Run(ctx)
 		if err != nil {
 			c.consumer.logger.Error("RabbitMQ consumer Run error", zap.Error(err))
-			time.Sleep(c.reconnectTimeout)
-			goto StartEstablishConnection
+
+			select {
+			case <-ctx.Done():
+				c.consumer.logger.Info("received shut down signal")
+				return nil
+			case <-time.After(c.reconnectTimeout):
+				goto StartEstablishConnection
+			}
 		}
 	}
 
