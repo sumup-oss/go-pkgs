@@ -14,7 +14,6 @@ import (
 
 type PersistentProducer struct {
 	producer          *Producer
-	isClosed          uint32
 	mu                sync.RWMutex
 	reconnectTimeout  time.Duration
 	rabbitClientCfg   *ClientConfig
