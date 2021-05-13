@@ -87,37 +87,45 @@ func (p *PersistentProducer) unsafeReconnect(ctx context.Context) {
 			return
 		case <-p.producer.closeCh:
 			p.producer.logger.Info("try to reconnect RabbitMQ producer")
-			client, err := NewRabbitMQClient(ctx, p.rabbitClientCfg)
+			err := p.newProducerFactory(ctx)
 			if err != nil {
-				p.producer.logger.Warn("RabbitMQ Failed to init client", zap.Error(err))
-
-				select {
-				case <-ctx.Done():
-					p.producer.logger.Info("received shut down signal")
-					return
-				case <-time.After(p.reconnectTimeout):
-					continue
-				}
+				p.producer.logger.Info("received shut down signal", zap.Error(err))
+				return
 			}
-
-			producer, err := NewProducer(client, p.producer.logger, p.producer.metric)
-			if err != nil {
-				p.producer.logger.Warn("RabbitMQ Failed to create new producer", zap.Error(err))
-
-				select {
-				case <-ctx.Done():
-					p.producer.logger.Info("received shut down signal")
-					return
-				case <-time.After(p.reconnectTimeout):
-					continue
-				}
-			}
-
-			p.mu.Lock()
-			p.producer = producer
-			p.mu.Unlock()
-
 			p.producer.logger.Info("successfully reconnected RabbitMQ producer")
 		}
 	}
+}
+
+func (p *PersistentProducer) newProducerFactory(ctx context.Context) error {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+
+StartEstablishConnection:
+	client, err := NewRabbitMQClient(ctx, p.rabbitClientCfg)
+	if err != nil {
+		p.producer.logger.Warn("RabbitMQ Failed to init client", zap.Error(err))
+
+		select {
+		case <-ctx.Done():
+			return stacktrace.NewError("received shut down signal")
+		case <-time.After(p.reconnectTimeout):
+			goto StartEstablishConnection
+		}
+	}
+
+	producer, err := NewProducer(client, p.producer.logger, p.producer.metric)
+	if err != nil {
+		p.producer.logger.Warn("RabbitMQ Failed to create new producer", zap.Error(err))
+
+		select {
+		case <-ctx.Done():
+			return stacktrace.NewError("received shut down signal")
+		case <-time.After(p.reconnectTimeout):
+			goto StartEstablishConnection
+		}
+	}
+
+	p.producer = producer
+	return nil
 }

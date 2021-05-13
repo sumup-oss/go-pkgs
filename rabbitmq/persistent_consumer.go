@@ -76,7 +76,7 @@ StartEstablishConnection:
 		c.consumer.logger.Info("received shut down signal")
 		return nil
 	default:
-		c.consumer.logger.Info("try to Run the consumer")
+		c.consumer.logger.Info("starting to run the consumer")
 		err := c.consumer.Run(ctx)
 		if err != nil {
 			c.consumer.logger.Error("RabbitMQ consumer Run error", zap.Error(err))
