@@ -18,7 +18,7 @@ func (r *RandomGeneratorMock) Int63n(n int64) int64 {
 	return args.Get(0).(int64)
 }
 
-func getDurationForRetry(retry int, duration time.Duration) int64 {
+func getDurationForRetry(retry uint, duration time.Duration) int64 {
 	return int64(duration * (1 << retry))
 }
 
