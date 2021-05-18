@@ -27,7 +27,7 @@ type Backoff struct {
 	config *Config
 
 	randomGen  RandomGenerator
-	retryCount int
+	retryCount uint
 	tn         time.Time
 }
 
