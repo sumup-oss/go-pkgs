@@ -1,6 +1,7 @@
 package backoff
 
 import (
+	"math/rand"
 	"time"
 )
 
@@ -16,17 +17,14 @@ type Config struct {
 	Base time.Duration
 	// Max is the maximum duration the backoff can return.
 	Max time.Duration
-	// BackoffResetDuration is the duration between two Next() calls that the Backoff will wait until he resets the counter.
-	BackoffResetDuration time.Duration
 	// Jitter is the Jitter used to randomize the next duration.
 	Jitter Jitter
 }
 
 var DefaultConfig = &Config{
-	Base:                 time.Second,
-	Max:                  time.Second * 30,
-	BackoffResetDuration: time.Second * 60,
-	Jitter:               FullJitter,
+	Base:   time.Second,
+	Max:    time.Second * 30,
+	Jitter: FullJitter,
 }
 
 // Backoff is used to calculate the next backoff duration using a Jitter.
@@ -38,10 +36,10 @@ type Backoff struct {
 
 	randomGen  RandomGenerator
 	retryCount uint
-	tn         time.Time
 }
 
-func New(randomGen RandomGenerator, config *Config) *Backoff {
+// NewBackoffWithRandomGen is used when you want to pass a custom RandomGenerator
+func NewBackoffWithRandomGen(randomGen RandomGenerator, config *Config) *Backoff {
 	if config.Base == 0 {
 		config.Base = DefaultConfig.Base
 	}
@@ -54,27 +52,22 @@ func New(randomGen RandomGenerator, config *Config) *Backoff {
 		config.Jitter = DefaultConfig.Jitter
 	}
 
-	if config.BackoffResetDuration == 0 {
-		config.BackoffResetDuration = DefaultConfig.BackoffResetDuration
-	}
-
 	return &Backoff{
 		config:    config,
 		randomGen: randomGen,
 	}
 }
 
+// NewBackoff uses the golang rand generator from the standard library.
+func NewBackoff(config *Config) *Backoff {
+	return NewBackoffWithRandomGen(
+		rand.New(rand.NewSource(time.Now().UnixNano())),
+		config,
+	)
+}
+
 // Next returns the next duration for the retry.
 func (b *Backoff) Next() time.Duration {
-	now := time.Now()
-	elapsed := now.Sub(b.tn)
-
-	if b.config.BackoffResetDuration != 0 {
-		if elapsed > b.config.BackoffResetDuration {
-			b.retryCount = 0
-		}
-	}
-
 	d := b.config.Base * (1 << b.retryCount)
 	if d > b.config.Max {
 		d = b.config.Max
@@ -82,12 +75,5 @@ func (b *Backoff) Next() time.Duration {
 		b.retryCount++
 	}
 
-	b.tn = now
-
 	return b.config.Jitter(b.randomGen, int64(d))
-}
-
-// Retried returns the number of retries
-func (b *Backoff) Retried() uint {
-	return b.retryCount
 }
