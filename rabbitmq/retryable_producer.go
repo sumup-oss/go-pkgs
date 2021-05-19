@@ -33,7 +33,7 @@ type RetryableProducer struct {
 	mu            sync.RWMutex
 	logger        logger.StructuredLogger
 	metric        Metric
-	clientFactory func(ctx context.Context, config *ClientConfig) (*RabbitMQClient, error)
+	clientFactory func(ctx context.Context, config *ClientConfig) (RabbitMQClientInterface, error)
 }
 
 type RetryableProducerConfig struct {
@@ -49,21 +49,21 @@ type RetryableProducerConfig struct {
 
 func NewRetryableProducer(
 	ctx context.Context,
-	newClientFactory func(ctx context.Context, config *ClientConfig) (*RabbitMQClient, error),
+	newClientFactory func(ctx context.Context, config *ClientConfig) (RabbitMQClientInterface, error),
 	config RetryableProducerConfig,
 	logger logger.StructuredLogger,
 	metric Metric,
 ) *RetryableProducer {
-	persistentProducer := &RetryableProducer{
+	retryableProducer := &RetryableProducer{
 		logger:        logger,
 		metric:        metric,
 		clientFactory: newClientFactory,
 		config:        config,
 	}
 
-	go persistentProducer.initProducer(ctx)
+	go retryableProducer.initProducer(ctx)
 
-	return persistentProducer
+	return retryableProducer
 }
 
 func (p *RetryableProducer) Publish(

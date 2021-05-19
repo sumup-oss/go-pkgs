@@ -28,7 +28,7 @@ import (
 var ErrProducerConnection = errors.New("RMQ producer has already closed the connection")
 
 type Producer struct {
-	client  *RabbitMQClient
+	client  RabbitMQClientInterface
 	logger  logger.StructuredLogger
 	metric  Metric
 	channel *amqp.Channel
@@ -37,7 +37,7 @@ type Producer struct {
 	isClosed bool
 }
 
-func NewProducer(client *RabbitMQClient, logger logger.StructuredLogger, metric Metric) (*Producer, error) {
+func NewProducer(client RabbitMQClientInterface, logger logger.StructuredLogger, metric Metric) (*Producer, error) {
 	channel, err := client.CreateChannel(context.TODO())
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "failed to create a channel")

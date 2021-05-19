@@ -30,7 +30,7 @@ type RetryableConsumer struct {
 	logger        logger.StructuredLogger
 	metric        Metric
 	handler       Handler
-	clientFactory func(ctx context.Context, config *ClientConfig) (*RabbitMQClient, error)
+	clientFactory func(ctx context.Context, config *ClientConfig) (RabbitMQClientInterface, error)
 }
 
 type RetryableConsumerConfig struct {
@@ -46,7 +46,7 @@ type RetryableConsumerConfig struct {
 }
 
 func NewRetryableConsumer(
-	newClientFactory func(ctx context.Context, config *ClientConfig) (*RabbitMQClient, error),
+	newClientFactory func(ctx context.Context, config *ClientConfig) (RabbitMQClientInterface, error),
 	config RetryableConsumerConfig,
 	logger logger.StructuredLogger,
 	metric Metric,
