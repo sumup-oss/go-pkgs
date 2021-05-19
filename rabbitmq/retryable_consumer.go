@@ -16,10 +16,11 @@ package rabbitmq
 
 import (
 	"context"
-	"go.uber.org/zap"
 	"time"
 
 	"github.com/palantir/stacktrace"
+	"go.uber.org/zap"
+
 	"github.com/sumup-oss/go-pkgs/backoff"
 	"github.com/sumup-oss/go-pkgs/logger"
 )
@@ -74,7 +75,7 @@ func (c *RetryableConsumer) Run(ctx context.Context) error {
 				return stacktrace.NewError("retry attempts exceeded")
 			}
 
-			if time.Now().Sub(startTime) > time.Duration(c.config.HealthCheckFactor)*c.config.BackoffConfig.Max {
+			if time.Since(startTime) > time.Duration(c.config.HealthCheckFactor)*c.config.BackoffConfig.Max {
 				consumerBackoff = backoff.NewBackoff(c.config.BackoffConfig)
 				currentRetryAttempts = 0
 			} else {

@@ -127,7 +127,7 @@ func (p *RetryableProducer) initProducer(ctx context.Context) {
 				return
 			}
 
-			if time.Now().Sub(startTime) > time.Duration(p.config.HealthCheckFactor)*p.config.BackoffConfig.Max {
+			if time.Since(startTime) > time.Duration(p.config.HealthCheckFactor)*p.config.BackoffConfig.Max {
 				producerBackoff = backoff.NewBackoff(p.config.BackoffConfig)
 				currentRetryAttempts = 0
 			} else {
