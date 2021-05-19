@@ -106,6 +106,8 @@ func (p *RetryableProducer) newProducer(ctx context.Context) (*Producer, error) 
 
 	producer, err := NewProducer(client, p.logger, p.metric)
 	if err != nil {
+		connCloseErr := client.Close()
+		p.logger.Error("cannot close RabbitMQ client connection", zap.Error(connCloseErr))
 		return nil, stacktrace.Propagate(err, "RabbitMQ Failed to create new producer")
 	}
 
