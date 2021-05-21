@@ -222,3 +222,48 @@ func RetryWithDeadline(
 		}
 	}
 }
+
+type Backoff interface {
+	Next() time.Duration
+}
+
+// RetryWithBackoff retries a task maxAttempts times with exponential backoff until it returns
+// no error or the returned error is non retriable.
+//
+// An error is retriable when it implements the RetryableError interface and its IsRetryable method
+// returns true.
+//
+// If the task do not complete for maxAttempts retries, RetryWithBackoff will return MaxRetryExceedError.
+//
+// NOTE: when the cancel channel is closed, RetryWithBackoff will not return an error, even if
+// the retryFunc had failed couple of times so far.
+//
+// If maxAttempts is -1, it will retry infinitely.
+func RetryWithBackoff(maxAttempts int, backoff Backoff, retryFunc TaskFunc) TaskFunc {
+	return func(ctx context.Context) error {
+		var err error
+		attempts := 0
+
+		for {
+			err = retryFunc(ctx)
+			if !IsRetryableError(err) {
+				return err
+			}
+
+			if maxAttempts != -1 {
+				attempts++
+				if attempts >= maxAttempts {
+					return NewMaxRetryError(maxAttempts, err)
+				}
+			}
+
+			retryTimer := time.NewTimer(backoff.Next())
+			select {
+			case <-ctx.Done():
+				retryTimer.Stop()
+				return nil
+			case <-retryTimer.C:
+			}
+		}
+	}
+}
