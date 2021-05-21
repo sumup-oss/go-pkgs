@@ -28,12 +28,15 @@ import (
 )
 
 type RetryableProducer struct {
-	producer      *Producer
 	config        RetryableProducerConfig
-	mu            sync.RWMutex
 	logger        logger.StructuredLogger
 	metric        Metric
 	clientFactory func(ctx context.Context, config *ClientConfig) (RabbitMQClientInterface, error)
+	cancel        context.CancelFunc
+
+	// mu protects the producer property
+	mu       sync.RWMutex
+	producer *Producer
 }
 
 type RetryableProducerConfig struct {
@@ -48,17 +51,19 @@ type RetryableProducerConfig struct {
 }
 
 func NewRetryableProducer(
-	ctx context.Context,
 	newClientFactory func(ctx context.Context, config *ClientConfig) (RabbitMQClientInterface, error),
 	config RetryableProducerConfig,
 	logger logger.StructuredLogger,
 	metric Metric,
 ) *RetryableProducer {
+	ctx, cancel := context.WithCancel(context.Background())
+
 	retryableProducer := &RetryableProducer{
 		logger:        logger,
 		metric:        metric,
 		clientFactory: newClientFactory,
 		config:        config,
+		cancel:        cancel,
 	}
 
 	go retryableProducer.initProducer(ctx)
@@ -76,17 +81,15 @@ func (p *RetryableProducer) Publish(
 	args amqp.Table,
 ) error {
 	p.mu.RLock()
-	defer p.mu.RUnlock()
+	producer := p.producer
+	p.mu.RUnlock()
 
-	if p.producer == nil {
+	if producer == nil {
 		return stacktrace.NewError("RabbitMQ Producer client not connected")
 	}
 
-	err := p.producer.Publish(exchange, key, mandatory, immediate, expiration, body, args)
+	err := producer.Publish(exchange, key, mandatory, immediate, expiration, body, args)
 	if err != nil {
-		if p.producer.isClosed {
-			return stacktrace.Propagate(err, "connection to RabbitMQ client closed")
-		}
 		return stacktrace.Propagate(err, "failed to publish RMQ message")
 	}
 
@@ -119,7 +122,6 @@ func (p *RetryableProducer) initProducer(ctx context.Context) {
 	currentRetryAttempts := 0
 
 	for {
-		startTime := time.Now()
 		producer, err := p.newProducer(ctx)
 		if err != nil {
 			p.logger.Error("producer connection failed with error", zap.Error(err))
@@ -127,13 +129,6 @@ func (p *RetryableProducer) initProducer(ctx context.Context) {
 			if p.config.MaxRetryAttempts != 0 && currentRetryAttempts > p.config.MaxRetryAttempts {
 				p.logger.Info("retry attempts exceeded")
 				return
-			}
-
-			if time.Since(startTime) > time.Duration(p.config.HealthCheckFactor)*p.config.BackoffConfig.Max {
-				producerBackoff = backoff.NewBackoff(p.config.BackoffConfig)
-				currentRetryAttempts = 0
-			} else {
-				currentRetryAttempts += 1
 			}
 
 			backoffDuration := producerBackoff.Next()
@@ -151,21 +146,24 @@ func (p *RetryableProducer) initProducer(ctx context.Context) {
 		p.producer = producer
 		p.mu.Unlock()
 
-		p.unsafeReconnect(ctx, producer)
-		return
-	}
-}
+		p.logger.Info("producer connected to RabbitMQ")
 
-func (p *RetryableProducer) unsafeReconnect(ctx context.Context, producer *Producer) {
-	for {
 		select {
 		case <-ctx.Done():
 			p.logger.Info("received shut down signal")
+			p.Close()
 			return
 		case <-producer.closeCh:
 			p.logger.Info("RabbitMQ Producer Client closed the connection, trying to reconnect")
-			p.initProducer(ctx)
-			return
 		}
 	}
+}
+
+func (p *RetryableProducer) Close() {
+	var once sync.Once
+	once.Do(func() {
+		p.cancel()
+		err := p.producer.Close()
+		p.logger.Error("error when closing producer", zap.Error(err))
+	})
 }
