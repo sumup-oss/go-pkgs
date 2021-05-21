@@ -16,8 +16,8 @@ package rabbitmq
 
 import (
 	"context"
-	"time"
 
+	"github.com/sumup-oss/go-pkgs/backoff"
 	"github.com/sumup-oss/go-pkgs/task"
 
 	"github.com/palantir/stacktrace"
@@ -39,42 +39,43 @@ type ClientConfig struct {
 	Metric Metric
 	// ConnectRetryAttempts number of attempts to try and dial the rabbitmq, and create a channel
 	ConnectRetryAttempts int
-	// InitialReconnectDelay delay between each attempt
-	InitialReconnectDelay time.Duration
+
+	BackoffConfig *backoff.Config
 }
 
 // A simple client that tries to connect to rabbitmq and create a channel
 //
 // Does not attempt to reconnect if the connection drops
 type RabbitMQClient struct {
-	amqpURI               string
-	conn                  *amqp.Connection
-	metric                Metric
-	connectRetryAttempts  int
-	initialReconnectDelay time.Duration
-	cfg                   *ClientConfig
+	amqpURI              string
+	conn                 *amqp.Connection
+	metric               Metric
+	connectRetryAttempts int
+	cfg                  *ClientConfig
 }
 
 func NewRabbitMQClient(ctx context.Context, cfg *ClientConfig) (RabbitMQClientInterface, error) {
 	client := &RabbitMQClient{
-		amqpURI:               cfg.ConnectionURI,
-		metric:                cfg.Metric,
-		connectRetryAttempts:  cfg.ConnectRetryAttempts,
-		initialReconnectDelay: cfg.InitialReconnectDelay,
-		cfg:                   cfg,
+		amqpURI:              cfg.ConnectionURI,
+		metric:               cfg.Metric,
+		connectRetryAttempts: cfg.ConnectRetryAttempts,
+		cfg:                  cfg,
 	}
 
-	err := task.RetryUntil(cfg.ConnectRetryAttempts, cfg.InitialReconnectDelay, func(c context.Context) error {
-		conn, dialErr := amqp.Dial(client.amqpURI)
-		if dialErr != nil {
-			cfg.Metric.ObserveRabbitMQConnectionRetry()
-			return task.NewRetryableError(dialErr)
-		}
+	err := task.RetryWithBackoff(
+		cfg.ConnectRetryAttempts,
+		backoff.NewBackoff(cfg.BackoffConfig),
+		func(c context.Context) error {
+			conn, dialErr := amqp.Dial(client.amqpURI)
+			if dialErr != nil {
+				cfg.Metric.ObserveRabbitMQConnectionRetry()
+				return task.NewRetryableError(dialErr)
+			}
 
-		client.conn = conn
-		client.metric.ObserveRabbitMQConnection()
-		return nil
-	})(ctx)
+			client.conn = conn
+			client.metric.ObserveRabbitMQConnection()
+			return nil
+		})(ctx)
 
 	if err != nil {
 		client.metric.ObserveRabbitMQChanelConnectionFailed()
@@ -87,18 +88,21 @@ func NewRabbitMQClient(ctx context.Context, cfg *ClientConfig) (RabbitMQClientIn
 func (c *RabbitMQClient) CreateChannel(ctx context.Context) (*amqp.Channel, error) {
 	var channel *amqp.Channel
 
-	err := task.RetryUntil(c.cfg.ConnectRetryAttempts, c.cfg.InitialReconnectDelay, func(ctx context.Context) error {
-		var channelErr error
+	err := task.RetryWithBackoff(
+		c.cfg.ConnectRetryAttempts,
+		backoff.NewBackoff(c.cfg.BackoffConfig),
+		func(ctx context.Context) error {
+			var channelErr error
 
-		channel, channelErr = c.conn.Channel()
-		if channelErr != nil {
-			c.metric.ObserveRabbitMQChanelConnectionRetry()
-			return task.NewRetryableError(channelErr)
-		}
+			channel, channelErr = c.conn.Channel()
+			if channelErr != nil {
+				c.metric.ObserveRabbitMQChanelConnectionRetry()
+				return task.NewRetryableError(channelErr)
+			}
 
-		c.metric.ObserveRabbitMQChanelConnection()
-		return nil
-	})(ctx)
+			c.metric.ObserveRabbitMQChanelConnection()
+			return nil
+		})(ctx)
 
 	if err != nil {
 		c.metric.ObserveRabbitMQChanelConnectionFailed()
