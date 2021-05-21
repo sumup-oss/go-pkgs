@@ -37,7 +37,7 @@ type ConsumerConfig struct {
 }
 
 type Consumer struct {
-	client  *RabbitMQClient
+	client  RabbitMQClientInterface
 	handler Handler
 	logger  logger.StructuredLogger
 	metric  Metric
@@ -46,7 +46,7 @@ type Consumer struct {
 }
 
 func NewConsumer(
-	client *RabbitMQClient,
+	client RabbitMQClientInterface,
 	handler Handler,
 	logger logger.StructuredLogger,
 	metric Metric,

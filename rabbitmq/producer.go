@@ -17,6 +17,7 @@ package rabbitmq
 import (
 	"context"
 	"errors"
+	"sync/atomic"
 
 	"github.com/palantir/stacktrace"
 	"github.com/streadway/amqp"
@@ -28,16 +29,19 @@ import (
 var ErrProducerConnection = errors.New("RMQ producer has already closed the connection")
 
 type Producer struct {
-	client  *RabbitMQClient
+	client  RabbitMQClientInterface
 	logger  logger.StructuredLogger
 	metric  Metric
 	channel *amqp.Channel
 
-	closeCh  chan *amqp.Error
-	isClosed bool
+	closeCh chan *amqp.Error
+
+	// Needs to be thread safe since publish can be called from multiple goroutines.
+	// That is why we need atomic here.
+	isClosed int32
 }
 
-func NewProducer(client *RabbitMQClient, logger logger.StructuredLogger, metric Metric) (*Producer, error) {
+func NewProducer(client RabbitMQClientInterface, logger logger.StructuredLogger, metric Metric) (*Producer, error) {
 	channel, err := client.CreateChannel(context.TODO())
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "failed to create a channel")
@@ -49,7 +53,7 @@ func NewProducer(client *RabbitMQClient, logger logger.StructuredLogger, metric 
 		metric:   metric,
 		channel:  channel,
 		closeCh:  channel.NotifyClose(make(chan *amqp.Error)),
-		isClosed: false,
+		isClosed: 0,
 	}, nil
 }
 
@@ -77,9 +81,9 @@ func (p *Producer) Publish(
 				"RMQ closed the connection without an error",
 			)
 		}
-		p.isClosed = true
+		atomic.CompareAndSwapInt32(&p.isClosed, 0, 1)
 	default:
-		if p.isClosed {
+		if atomic.LoadInt32(&p.isClosed) == 1 {
 			return stacktrace.Propagate(ErrProducerConnection, "RabbitMQ connection closed")
 		}
 

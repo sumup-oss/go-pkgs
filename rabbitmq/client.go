@@ -25,6 +25,12 @@ import (
 	"github.com/streadway/amqp"
 )
 
+type RabbitMQClientInterface interface {
+	CreateChannel(ctx context.Context) (*amqp.Channel, error)
+	Setup(ctx context.Context, setup *Setup) error
+	Close() error
+}
+
 type ClientConfig struct {
 	// ConnectionURI is the string used to connect to rabbitmq, e.g `amqp://...`
 	ConnectionURI string
@@ -49,7 +55,7 @@ type RabbitMQClient struct {
 	cfg                   *ClientConfig
 }
 
-func NewRabbitMQClient(ctx context.Context, cfg *ClientConfig) (*RabbitMQClient, error) {
+func NewRabbitMQClient(ctx context.Context, cfg *ClientConfig) (RabbitMQClientInterface, error) {
 	client := &RabbitMQClient{
 		amqpURI:               cfg.ConnectionURI,
 		metric:                cfg.Metric,
