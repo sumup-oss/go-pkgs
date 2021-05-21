@@ -17,13 +17,11 @@ package rabbitmq
 import (
 	"context"
 	"sync"
-	"time"
 
 	"github.com/palantir/stacktrace"
 	"github.com/streadway/amqp"
 	"go.uber.org/zap"
 
-	"github.com/sumup-oss/go-pkgs/backoff"
 	"github.com/sumup-oss/go-pkgs/logger"
 )
 
@@ -40,13 +38,6 @@ type RetryableProducer struct {
 }
 
 type RetryableProducerConfig struct {
-	MaxRetryAttempts int
-	// HealthCheckFactor is a number representing how much N multiplied by backoffConfig.Max time is needed
-	// for a block of code to run w/o returning an error, to consider it healthy.
-	// E.g backConfig.Max = 1min, healthCheckFactor = 2, means that code needs to run 2min at least to be healthy
-	// and retried again starting from backoffConfig.Base the next time it has an error.
-	HealthCheckFactor  int
-	BackoffConfig      *backoff.Config
 	RabbitClientConfig *ClientConfig
 }
 
@@ -117,36 +108,9 @@ func (p *RetryableProducer) newProducer(ctx context.Context) (*Producer, error) 
 	return producer, nil
 }
 
-func (p *RetryableProducer) newProducerWithBackoff(ctx context.Context) (*Producer, error) {
-	producerBackoff := backoff.NewBackoff(p.config.BackoffConfig)
-	currentRetryAttempts := 0
-
-	for {
-		producer, err := p.newProducer(ctx)
-		if err != nil {
-			p.logger.Error("producer connection failed with error", zap.Error(err))
-
-			if p.config.MaxRetryAttempts != 0 && currentRetryAttempts > p.config.MaxRetryAttempts {
-				return nil, stacktrace.NewError("retry attempts exceeded")
-			}
-
-			backoffDuration := producerBackoff.Next()
-
-			select {
-			case <-ctx.Done():
-				return nil, stacktrace.NewError("received context cancel")
-			case <-time.After(backoffDuration):
-				continue
-			}
-		}
-
-		return producer, nil
-	}
-}
-
 func (p *RetryableProducer) initProducer(ctx context.Context) {
 	for {
-		producer, err := p.newProducerWithBackoff(ctx)
+		producer, err := p.newProducer(ctx)
 		if err != nil {
 			p.logger.Info("failed to create producer with backoff", zap.Error(err))
 			return

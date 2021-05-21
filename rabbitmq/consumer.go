@@ -27,6 +27,26 @@ import (
 	"github.com/streadway/amqp"
 )
 
+type RabbitMQChannel interface {
+	NotifyClose(c chan *amqp.Error) chan *amqp.Error
+	Cancel(consumer string, noWait bool) error
+	Qos(prefetchCount, prefetchSize int, global bool) error
+	Consume(
+		queue,
+		consumer string,
+		autoAck,
+		exclusive,
+		noLocal,
+		noWait bool,
+		args amqp.Table,
+	) (<-chan amqp.Delivery, error)
+	Close() error
+}
+
+type RabbitMQConnection interface {
+	Close() error
+}
+
 type ConsumerConfig struct {
 	// PrefetchCount configures how many in-flight "deliveries" are available to the consumer to ack/nack.
 	// ref: https://www.rabbitmq.com/consumer-prefetch.html
@@ -37,41 +57,39 @@ type ConsumerConfig struct {
 }
 
 type Consumer struct {
-	client  RabbitMQClientInterface
-	handler Handler
-	logger  logger.StructuredLogger
-	metric  Metric
-	cfg     ConsumerConfig
-	stopWg  sync.WaitGroup
+	rabbitConn    RabbitMQConnection
+	rabbitChannel RabbitMQChannel
+	handler       Handler
+	logger        logger.StructuredLogger
+	metric        Metric
+	cfg           ConsumerConfig
+	stopWg        sync.WaitGroup
 }
 
-func NewConsumer(
-	client RabbitMQClientInterface,
+func newConsumer(
+	rabbitConn RabbitMQConnection,
+	rabbitChannel RabbitMQChannel,
 	handler Handler,
 	logger logger.StructuredLogger,
 	metric Metric,
 	cfg ConsumerConfig,
 ) *Consumer {
 	return &Consumer{
-		client:  client,
-		handler: handler,
-		logger:  logger,
-		metric:  metric,
-		cfg:     cfg,
-		stopWg:  sync.WaitGroup{},
+		rabbitConn:    rabbitConn,
+		rabbitChannel: rabbitChannel,
+		handler:       handler,
+		logger:        logger,
+		metric:        metric,
+		cfg:           cfg,
+		stopWg:        sync.WaitGroup{},
 	}
 }
 
 func (c *Consumer) Run(ctx context.Context) error {
-	channel, err := c.client.CreateChannel(ctx)
-	if err != nil {
-		return stacktrace.Propagate(err, "failed to create a RMQ channel")
-	}
-
 	ctx, cancelFunc := context.WithCancel(ctx)
 	defer cancelFunc()
 
-	closeCh := channel.NotifyClose(make(chan *amqp.Error))
+	closeCh := c.rabbitChannel.NotifyClose(make(chan *amqp.Error))
 
 	go func() {
 		select {
@@ -87,7 +105,7 @@ func (c *Consumer) Run(ctx context.Context) error {
 			return
 		case <-ctx.Done():
 			c.logger.Info("Received context cancel. Going to close RMQ connections.")
-			err = channel.Cancel(c.handler.GetConsumerTag(), false)
+			err := c.rabbitChannel.Cancel(c.handler.GetConsumerTag(), false)
 			if err != nil {
 				c.logger.Warn("failed to cancel the RMQ channel while stopping handler", logger.ErrorField(err))
 			}
@@ -98,10 +116,10 @@ func (c *Consumer) Run(ctx context.Context) error {
 				c.stopWg.Wait()
 			}
 
-			_ = channel.Close()
+			_ = c.rabbitChannel.Close()
 
 			c.logger.Info("RMQ consumer stopped.")
-			_ = c.client.Close()
+			_ = c.rabbitConn.Close()
 		}
 	}()
 
@@ -109,12 +127,12 @@ func (c *Consumer) Run(ctx context.Context) error {
 		return stacktrace.Propagate(ctx.Err(), "context canceled")
 	}
 
-	err = channel.Qos(c.cfg.PrefetchCount, 0, false)
+	err := c.rabbitChannel.Qos(c.cfg.PrefetchCount, 0, false)
 	if err != nil {
 		return stacktrace.Propagate(err, "failed to set RMQ channel's QoS prefetch count to: %d", c.cfg.PrefetchCount)
 	}
 
-	deliveries, err := channel.Consume(
+	deliveries, err := c.rabbitChannel.Consume(
 		c.handler.GetQueueName(),
 		c.handler.GetConsumerTag(),
 		c.handler.QueueAutoAck(),

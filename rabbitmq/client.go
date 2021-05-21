@@ -18,6 +18,7 @@ import (
 	"context"
 
 	"github.com/sumup-oss/go-pkgs/backoff"
+	"github.com/sumup-oss/go-pkgs/logger"
 	"github.com/sumup-oss/go-pkgs/task"
 
 	"github.com/palantir/stacktrace"
@@ -26,7 +27,6 @@ import (
 )
 
 type RabbitMQClientInterface interface {
-	CreateChannel(ctx context.Context) (*amqp.Channel, error)
 	Setup(ctx context.Context, setup *Setup) error
 	Close() error
 }
@@ -48,104 +48,110 @@ type ClientConfig struct {
 // Does not attempt to reconnect if the connection drops
 type RabbitMQClient struct {
 	amqpURI              string
-	conn                 *amqp.Connection
 	metric               Metric
 	connectRetryAttempts int
 	cfg                  *ClientConfig
 }
 
-func NewRabbitMQClient(ctx context.Context, cfg *ClientConfig) (RabbitMQClientInterface, error) {
-	client := &RabbitMQClient{
+func NewRabbitMQClient(ctx context.Context, cfg *ClientConfig) RabbitMQClientInterface {
+	return &RabbitMQClient{
 		amqpURI:              cfg.ConnectionURI,
 		metric:               cfg.Metric,
 		connectRetryAttempts: cfg.ConnectRetryAttempts,
 		cfg:                  cfg,
 	}
-
-	err := task.RetryWithBackoff(
-		cfg.ConnectRetryAttempts,
-		backoff.NewBackoff(cfg.BackoffConfig),
-		func(c context.Context) error {
-			conn, dialErr := amqp.Dial(client.amqpURI)
-			if dialErr != nil {
-				cfg.Metric.ObserveRabbitMQConnectionRetry()
-				return task.NewRetryableError(dialErr)
-			}
-
-			client.conn = conn
-			client.metric.ObserveRabbitMQConnection()
-			return nil
-		})(ctx)
-
-	if err != nil {
-		client.metric.ObserveRabbitMQChanelConnectionFailed()
-		return nil, stacktrace.Propagate(err, "couldn't dial rabbitmq")
-	}
-
-	return client, nil
 }
 
-func (c *RabbitMQClient) CreateChannel(ctx context.Context) (*amqp.Channel, error) {
-	var channel *amqp.Channel
+func (c *RabbitMQClient) CreateConsumer(
+	ctx context.Context,
+	handler Handler,
+	logger logger.StructuredLogger,
+	cfg ConsumerConfig,
+) (*Consumer, error) {
+	var (
+		conn    *amqp.Connection
+		channel *amqp.Channel
+	)
 
 	err := task.RetryWithBackoff(
 		c.cfg.ConnectRetryAttempts,
 		backoff.NewBackoff(c.cfg.BackoffConfig),
 		func(ctx context.Context) error {
-			var channelErr error
-
-			channel, channelErr = c.conn.Channel()
-			if channelErr != nil {
-				c.metric.ObserveRabbitMQChanelConnectionRetry()
-				return task.NewRetryableError(channelErr)
+			var dialErr error
+			conn, dialErr = amqp.Dial(c.cfg.ConnectionURI)
+			if dialErr != nil {
+				c.cfg.Metric.ObserveRabbitMQConnectionRetry()
+				return task.NewRetryableError(dialErr)
 			}
 
-			c.metric.ObserveRabbitMQChanelConnection()
+			c.metric.ObserveRabbitMQConnection()
+
+			var chanErr error
+			channel, chanErr = c.createChannel(ctx, conn)
+			if chanErr != nil {
+				return task.NewRetryableError(chanErr)
+			}
+
 			return nil
 		})(ctx)
 
 	if err != nil {
 		c.metric.ObserveRabbitMQChanelConnectionFailed()
-		return nil, stacktrace.Propagate(err, "couldn't create channel for rabbitmq")
+		return nil, stacktrace.Propagate(err, "couldn't dial rabbitmq")
 	}
+
+	return newConsumer(conn, channel, handler, logger, c.metric, cfg), nil
+}
+
+func (c *RabbitMQClient) createChannel(
+	ctx context.Context,
+	conn *amqp.Connection,
+) (*amqp.Channel, error) {
+
+	channel, channelErr := conn.Channel()
+	if channelErr != nil {
+		c.metric.ObserveRabbitMQChanelConnectionFailed()
+		return nil, stacktrace.Propagate(channelErr, "couldn't create channel for rabbitmq")
+	}
+
+	c.metric.ObserveRabbitMQChanelConnection()
 
 	return channel, nil
 }
 
 func (c *RabbitMQClient) Setup(ctx context.Context, setup *Setup) error {
-	channel, err := c.CreateChannel(ctx)
-	if err != nil {
-		return stacktrace.Propagate(err, "failed to create a RMQ channel")
-	}
+	// channel, err := c.createChannel(ctx)
+	// if err != nil {
+	// return stacktrace.Propagate(err, "failed to create a RMQ channel")
+	// }
 
-	for _, e := range setup.Exchanges {
-		err := channel.ExchangeDeclare(e.Name, e.Kind, e.Durable, e.AutoDelete, e.Internal, e.NoWait, e.Args)
-		if err != nil {
-			return stacktrace.Propagate(err, "could not declare exchange")
-		}
-	}
+	// for _, e := range setup.Exchanges {
+	// err := channel.ExchangeDeclare(e.Name, e.Kind, e.Durable, e.AutoDelete, e.Internal, e.NoWait, e.Args)
+	// if err != nil {
+	// return stacktrace.Propagate(err, "could not declare exchange")
+	// }
+	// }
 
-	for _, q := range setup.Queues {
-		_, err := channel.QueueDeclare(q.Name, q.Durable, q.AutoDelete, q.Exclusive, q.NoWait, q.Args)
-		if err != nil {
-			return stacktrace.Propagate(err, "could not declare queue")
-		}
-	}
+	// for _, q := range setup.Queues {
+	// _, err := channel.QueueDeclare(q.Name, q.Durable, q.AutoDelete, q.Exclusive, q.NoWait, q.Args)
+	// if err != nil {
+	// return stacktrace.Propagate(err, "could not declare queue")
+	// }
+	// }
 
-	for _, b := range setup.QueueBindings {
-		err := channel.QueueBind(b.Name, b.Key, b.Exchange, b.NoWait, b.Args)
-		if err != nil {
-			return stacktrace.Propagate(
-				err,
-				"could not bind queue %s to exchange %s", b.Name, b.Exchange,
-			)
-		}
-	}
+	// for _, b := range setup.QueueBindings {
+	// err := channel.QueueBind(b.Name, b.Key, b.Exchange, b.NoWait, b.Args)
+	// if err != nil {
+	// return stacktrace.Propagate(
+	// err,
+	// "could not bind queue %s to exchange %s", b.Name, b.Exchange,
+	// )
+	// }
+	// }
 
 	return nil
 }
 
 func (c *RabbitMQClient) Close() error {
-	err := c.conn.Close()
-	return stacktrace.Propagate(err, "RMQ connection close")
+	return nil
 }
