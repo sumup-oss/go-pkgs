@@ -117,7 +117,7 @@ func (p *RetryableProducer) newProducer(ctx context.Context) (*Producer, error) 
 	return producer, nil
 }
 
-func (p *RetryableProducer) initProducer(ctx context.Context) {
+func (p *RetryableProducer) newProducerWithBackoff(ctx context.Context) (*Producer, error) {
 	producerBackoff := backoff.NewBackoff(p.config.BackoffConfig)
 	currentRetryAttempts := 0
 
@@ -127,19 +127,29 @@ func (p *RetryableProducer) initProducer(ctx context.Context) {
 			p.logger.Error("producer connection failed with error", zap.Error(err))
 
 			if p.config.MaxRetryAttempts != 0 && currentRetryAttempts > p.config.MaxRetryAttempts {
-				p.logger.Info("retry attempts exceeded")
-				return
+				return nil, stacktrace.NewError("retry attempts exceeded")
 			}
 
 			backoffDuration := producerBackoff.Next()
 
 			select {
 			case <-ctx.Done():
-				p.logger.Info("received context cancel")
-				return
+				return nil, stacktrace.NewError("received context cancel")
 			case <-time.After(backoffDuration):
 				continue
 			}
+		}
+
+		return producer, nil
+	}
+}
+
+func (p *RetryableProducer) initProducer(ctx context.Context) {
+	for {
+		producer, err := p.newProducerWithBackoff(ctx)
+		if err != nil {
+			p.logger.Info("failed to create producer with backoff", zap.Error(err))
+			return
 		}
 
 		p.mu.Lock()
@@ -151,7 +161,10 @@ func (p *RetryableProducer) initProducer(ctx context.Context) {
 		select {
 		case <-ctx.Done():
 			p.logger.Info("received shut down signal")
-			p.Close()
+			err := producer.Close()
+			if err != nil {
+				p.logger.Error("error when closing the producer", zap.Error(err))
+			}
 			return
 		case <-producer.closeCh:
 			p.logger.Info("RabbitMQ Producer Client closed the connection, trying to reconnect")
@@ -160,10 +173,5 @@ func (p *RetryableProducer) initProducer(ctx context.Context) {
 }
 
 func (p *RetryableProducer) Close() {
-	var once sync.Once
-	once.Do(func() {
-		p.cancel()
-		err := p.producer.Close()
-		p.logger.Error("error when closing producer", zap.Error(err))
-	})
+	p.cancel()
 }
