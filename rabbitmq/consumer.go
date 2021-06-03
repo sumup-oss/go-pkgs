@@ -158,6 +158,14 @@ func (c *Consumer) handleDeliveries(
 	}
 }
 
+func tracingField(d *amqp.Delivery) zap.Field {
+	if d.CorrelationId == "" {
+		return zap.Skip()
+	}
+
+	return zap.String("tracing_id", d.CorrelationId)
+}
+
 func (c *Consumer) handleSingleDelivery(ctx context.Context, d *amqp.Delivery) error {
 	c.metric.ObserveMsgDelivered()
 
@@ -177,7 +185,11 @@ func (c *Consumer) handleSingleDelivery(ctx context.Context, d *amqp.Delivery) e
 		err := d.Ack(false)
 		if err != nil {
 			c.metric.ObserveAck(false)
-			c.logger.Error("failed to ack message", zap.Error(err))
+			c.logger.Error(
+				"failed to ack message",
+				zap.Error(err),
+				tracingField(d),
+			)
 
 			if c.handler.MustStopOnAckError() {
 				return stacktrace.Propagate(err, "stop consuming due to ack error")
@@ -187,13 +199,20 @@ func (c *Consumer) handleSingleDelivery(ctx context.Context, d *amqp.Delivery) e
 		}
 
 		c.metric.ObserveAck(true)
-		c.logger.Info("successful ack message")
+		c.logger.Info(
+			"successful ack message",
+			tracingField(d),
+		)
 		return nil
 	case Nack:
 		err := d.Nack(false, acknowledgement.Requeue)
 		if err != nil {
 			c.metric.ObserveNack(false)
-			c.logger.Error("failed to nack message", zap.Error(err))
+			c.logger.Error(
+				"failed to nack message",
+				zap.Error(err),
+				tracingField(d),
+			)
 
 			if c.handler.MustStopOnNAckError() {
 				return stacktrace.Propagate(err, "stop consuming due to nack error")
@@ -203,14 +222,21 @@ func (c *Consumer) handleSingleDelivery(ctx context.Context, d *amqp.Delivery) e
 		}
 
 		c.metric.ObserveNack(true)
-		c.logger.Info("successful nack message")
+		c.logger.Info(
+			"successful nack message",
+			tracingField(d),
+		)
 
 		return nil
 	case Reject:
 		err := d.Reject(acknowledgement.Requeue)
 		if err != nil {
 			c.metric.ObserveReject(false)
-			c.logger.Error("failed to reject message", zap.Error(err))
+			c.logger.Error(
+				"failed to reject message",
+				zap.Error(err),
+				tracingField(d),
+			)
 
 			if c.handler.MustStopOnRejectError() {
 				return stacktrace.Propagate(err, "stop consuming due to reject error")
@@ -219,7 +245,10 @@ func (c *Consumer) handleSingleDelivery(ctx context.Context, d *amqp.Delivery) e
 			return nil
 		}
 		c.metric.ObserveReject(true)
-		c.logger.Info("successful rejected message")
+		c.logger.Info(
+			"successful rejected message",
+			tracingField(d),
+		)
 
 		return nil
 	default:
