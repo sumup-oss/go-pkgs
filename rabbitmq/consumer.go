@@ -161,6 +161,7 @@ func (c *Consumer) handleDeliveries(
 func (c *Consumer) handleSingleDelivery(ctx context.Context, d *amqp.Delivery) error {
 	c.metric.ObserveMsgDelivered()
 
+	ctx = c.handler.GetConsumeContext(ctx, d)
 	acknowledgement, err := c.handler.ReceiveMessage(ctx, d.Body)
 	if err != nil {
 		return stacktrace.Propagate(err, "handler returned error")

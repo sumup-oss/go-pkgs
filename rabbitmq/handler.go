@@ -14,7 +14,11 @@
 
 package rabbitmq
 
-import "context"
+import (
+	"context"
+
+	"github.com/streadway/amqp"
+)
 
 type Handler interface {
 	GetQueueName() string
@@ -26,6 +30,7 @@ type Handler interface {
 	MustStopOnRejectError() bool
 	WaitToConsumeInflight() bool
 	ReceiveMessage(ctx context.Context, payload []byte) (acknowledgement HandlerAcknowledgement, err error)
+	GetConsumeContext(ctx context.Context, d *amqp.Delivery) context.Context
 }
 
 type AcknowledgementType int
