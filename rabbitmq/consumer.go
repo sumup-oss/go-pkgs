@@ -158,14 +158,6 @@ func (c *Consumer) handleDeliveries(
 	}
 }
 
-func tracingField(d *amqp.Delivery) zap.Field {
-	if d.CorrelationId == "" {
-		return zap.Skip()
-	}
-
-	return zap.String("tracing_id", d.CorrelationId)
-}
-
 func (c *Consumer) handleSingleDelivery(ctx context.Context, d *amqp.Delivery) error {
 	c.metric.ObserveMsgDelivered()
 
@@ -190,7 +182,7 @@ func (c *Consumer) handleSingleDelivery(ctx context.Context, d *amqp.Delivery) e
 			c.logger.Error(
 				"failed to ack message",
 				zap.Error(err),
-				tracingField(d),
+				tracingField(d.CorrelationId),
 			)
 
 			if c.handler.MustStopOnAckError() {
@@ -203,7 +195,7 @@ func (c *Consumer) handleSingleDelivery(ctx context.Context, d *amqp.Delivery) e
 		c.metric.ObserveAck(true)
 		c.logger.Info(
 			"successful ack message",
-			tracingField(d),
+			tracingField(d.CorrelationId),
 		)
 		return nil
 	case Nack:
@@ -213,7 +205,7 @@ func (c *Consumer) handleSingleDelivery(ctx context.Context, d *amqp.Delivery) e
 			c.logger.Error(
 				"failed to nack message",
 				zap.Error(err),
-				tracingField(d),
+				tracingField(d.CorrelationId),
 			)
 
 			if c.handler.MustStopOnNAckError() {
@@ -226,7 +218,7 @@ func (c *Consumer) handleSingleDelivery(ctx context.Context, d *amqp.Delivery) e
 		c.metric.ObserveNack(true)
 		c.logger.Info(
 			"successful nack message",
-			tracingField(d),
+			tracingField(d.CorrelationId),
 		)
 
 		return nil
@@ -237,7 +229,7 @@ func (c *Consumer) handleSingleDelivery(ctx context.Context, d *amqp.Delivery) e
 			c.logger.Error(
 				"failed to reject message",
 				zap.Error(err),
-				tracingField(d),
+				tracingField(d.CorrelationId),
 			)
 
 			if c.handler.MustStopOnRejectError() {
@@ -249,7 +241,7 @@ func (c *Consumer) handleSingleDelivery(ctx context.Context, d *amqp.Delivery) e
 		c.metric.ObserveReject(true)
 		c.logger.Info(
 			"successful rejected message",
-			tracingField(d),
+			tracingField(d.CorrelationId),
 		)
 
 		return nil

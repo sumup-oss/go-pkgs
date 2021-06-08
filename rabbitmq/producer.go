@@ -85,10 +85,12 @@ func (p *Producer) Publish(
 				zap.Int("code", rmqErr.Code),
 				zap.Bool("recover", rmqErr.Recover),
 				zap.Bool("server", rmqErr.Server),
+				tracingField(args.CorrelationID),
 			)
 		} else {
 			p.logger.Warn(
 				"RMQ closed the connection without an error",
+				tracingField(args.CorrelationID),
 			)
 		}
 		atomic.CompareAndSwapInt32(&p.isClosed, 0, 1)
