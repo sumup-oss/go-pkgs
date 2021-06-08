@@ -20,7 +20,6 @@ import (
 	"time"
 
 	"github.com/palantir/stacktrace"
-	"github.com/streadway/amqp"
 	"go.uber.org/zap"
 
 	"github.com/sumup-oss/go-pkgs/backoff"
@@ -78,7 +77,7 @@ func (p *RetryableProducer) Publish(
 	immediate bool,
 	expiration string,
 	body []byte,
-	args amqp.Table,
+	args MessageArgs,
 ) error {
 	p.mu.RLock()
 	producer := p.producer

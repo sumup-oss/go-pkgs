@@ -45,9 +45,9 @@ type HandlerAcknowledgement struct {
 
 // Message contains data that is specific to the consumed RabbitMQ message
 type Message struct {
-	// Body contains the received message's payload
+	// The application specific payload of the message
 	Body []byte
 
-	// CorrelationId represents the received message's CorrelationId
+	// Correlation identifier
 	CorrelationId string
 }
