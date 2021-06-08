@@ -171,7 +171,7 @@ func (c *Consumer) handleSingleDelivery(ctx context.Context, d *amqp.Delivery) e
 
 	acknowledgement, err := c.handler.ReceiveMessage(ctx, &Message{
 		Body:          d.Body,
-		CorrelationId: d.CorrelationId,
+		CorrelationID: d.CorrelationId,
 	})
 	if err != nil {
 		return stacktrace.Propagate(err, "handler returned error")

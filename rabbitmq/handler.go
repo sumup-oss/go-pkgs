@@ -49,5 +49,5 @@ type Message struct {
 	Body []byte
 
 	// Correlation identifier
-	CorrelationId string
+	CorrelationID string
 }

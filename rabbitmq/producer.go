@@ -35,7 +35,7 @@ type MessageArgs struct {
 	Headers amqp.Table
 
 	// Correlation identifier
-	CorrelationId string
+	CorrelationID string
 }
 
 type Producer struct {
@@ -104,7 +104,7 @@ func (p *Producer) Publish(
 			immediate,
 			amqp.Publishing{
 				Headers:       args.Headers,
-				CorrelationId: args.CorrelationId,
+				CorrelationId: args.CorrelationID,
 				Expiration:    expiration,
 				Body:          body,
 			},
