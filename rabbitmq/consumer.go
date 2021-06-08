@@ -169,8 +169,10 @@ func tracingField(d *amqp.Delivery) zap.Field {
 func (c *Consumer) handleSingleDelivery(ctx context.Context, d *amqp.Delivery) error {
 	c.metric.ObserveMsgDelivered()
 
-	ctx = c.handler.GetConsumeContext(ctx, d)
-	acknowledgement, err := c.handler.ReceiveMessage(ctx, d.Body)
+	acknowledgement, err := c.handler.ReceiveMessage(ctx, &Message{
+		Body:          d.Body,
+		CorrelationId: d.CorrelationId,
+	})
 	if err != nil {
 		return stacktrace.Propagate(err, "handler returned error")
 	}

@@ -16,8 +16,6 @@ package rabbitmq
 
 import (
 	"context"
-
-	"github.com/streadway/amqp"
 )
 
 type Handler interface {
@@ -29,8 +27,7 @@ type Handler interface {
 	MustStopOnNAckError() bool
 	MustStopOnRejectError() bool
 	WaitToConsumeInflight() bool
-	ReceiveMessage(ctx context.Context, payload []byte) (acknowledgement HandlerAcknowledgement, err error)
-	GetConsumeContext(ctx context.Context, d *amqp.Delivery) context.Context
+	ReceiveMessage(ctx context.Context, msg *Message) (acknowledgement HandlerAcknowledgement, err error)
 }
 
 type AcknowledgementType int
@@ -44,4 +41,13 @@ const (
 type HandlerAcknowledgement struct {
 	Acknowledgement AcknowledgementType
 	Requeue         bool
+}
+
+// Message contains data that is specific to the consumed RabbitMQ message
+type Message struct {
+	// Body contains the received message's payload
+	Body []byte
+
+	// CorrelationId represents the received message's CorrelationId
+	CorrelationId string
 }
