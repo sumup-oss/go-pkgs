@@ -28,6 +28,16 @@ import (
 
 var ErrProducerConnection = errors.New("RMQ producer has already closed the connection")
 
+// MessageArgs captures the fields related to the message sent to the server
+type MessageArgs struct {
+	// Application or exchange specific fields,
+	// the headers exchange will inspect this field.
+	Headers amqp.Table
+
+	// Correlation identifier
+	CorrelationID string
+}
+
 type Producer struct {
 	client  RabbitMQClientInterface
 	logger  logger.StructuredLogger
@@ -64,7 +74,7 @@ func (p *Producer) Publish(
 	immediate bool,
 	expiration string,
 	body []byte,
-	args amqp.Table,
+	args MessageArgs,
 ) error {
 	select {
 	case rmqErr := <-p.closeCh:
@@ -75,10 +85,12 @@ func (p *Producer) Publish(
 				zap.Int("code", rmqErr.Code),
 				zap.Bool("recover", rmqErr.Recover),
 				zap.Bool("server", rmqErr.Server),
+				tracingField(args.CorrelationID),
 			)
 		} else {
 			p.logger.Warn(
 				"RMQ closed the connection without an error",
+				tracingField(args.CorrelationID),
 			)
 		}
 		atomic.CompareAndSwapInt32(&p.isClosed, 0, 1)
@@ -93,9 +105,10 @@ func (p *Producer) Publish(
 			mandatory,
 			immediate,
 			amqp.Publishing{
-				Headers:    args,
-				Expiration: expiration,
-				Body:       body,
+				Headers:       args.Headers,
+				CorrelationId: args.CorrelationID,
+				Expiration:    expiration,
+				Body:          body,
 			},
 		)
 		p.metric.ObserveMsgPublish(err == nil)

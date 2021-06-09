@@ -14,7 +14,9 @@
 
 package rabbitmq
 
-import "context"
+import (
+	"context"
+)
 
 type Handler interface {
 	GetQueueName() string
@@ -25,7 +27,7 @@ type Handler interface {
 	MustStopOnNAckError() bool
 	MustStopOnRejectError() bool
 	WaitToConsumeInflight() bool
-	ReceiveMessage(ctx context.Context, payload []byte) (acknowledgement HandlerAcknowledgement, err error)
+	ReceiveMessage(ctx context.Context, msg *Message) (acknowledgement HandlerAcknowledgement, err error)
 }
 
 type AcknowledgementType int
@@ -39,4 +41,13 @@ const (
 type HandlerAcknowledgement struct {
 	Acknowledgement AcknowledgementType
 	Requeue         bool
+}
+
+// Message contains data that is specific to the consumed RabbitMQ message
+type Message struct {
+	// The application specific payload of the message
+	Body []byte
+
+	// Correlation identifier
+	CorrelationID string
 }
