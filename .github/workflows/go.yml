@@ -46,3 +46,11 @@ jobs:
     
     - name: Test
       run: go test -v ./...
+
+    - name: Lint executor/kubernetes module
+      run: $(go env GOPATH)/bin/golangci-lint run --timeout=10m
+      working-directory: ./executor/kubernetes
+    
+    - name: Test executor/kubernetes module
+      run: go test -v ./...
+      working-directory: ./executor/kubernetes
