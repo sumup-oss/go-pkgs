@@ -43,7 +43,7 @@ type HandlerAcknowledgement struct {
 	Requeue         bool
 }
 
-// Message contains data that is specific to the consumed RabbitMQ message
+// Message contains data that is specific to the consumed RabbitMQ message.
 type Message struct {
 	// The application specific payload of the message
 	Body []byte

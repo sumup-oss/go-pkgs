@@ -257,6 +257,7 @@ func (s *FakePostgresServer) RunWithArgs() error {
 	for i := 0; i < 15; i++ {
 		if s.IsHealthy() {
 			isHealthy = true
+
 			break
 		}
 		time.Sleep(1 * time.Second)
@@ -267,6 +268,7 @@ func (s *FakePostgresServer) RunWithArgs() error {
 	}
 
 	log.Println("Postgres is healthy")
+
 	return nil
 }
 
@@ -277,6 +279,7 @@ func (s *FakePostgresServer) Stop() error {
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	cmd.Env = s.dockerEnv
+
 	return cmd.Run()
 }
 

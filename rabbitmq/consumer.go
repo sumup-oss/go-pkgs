@@ -84,6 +84,7 @@ func (c *Consumer) Run(ctx context.Context) error {
 				zap.Bool("recover", rmqErr.Recover),
 				zap.Bool("server", rmqErr.Server),
 			)
+
 			return
 		case <-ctx.Done():
 			c.logger.Info("Received context cancel. Going to close RMQ connections.")
@@ -128,10 +129,10 @@ func (c *Consumer) Run(ctx context.Context) error {
 	}
 
 	err = c.handleDeliveries(ctx, deliveries)
+
 	return stacktrace.Propagate(err, "failed/stopped handling RMQ consumer deliveries")
 }
 
-// nolint:gocognit
 func (c *Consumer) handleDeliveries(
 	ctx context.Context,
 	deliveries <-chan amqp.Delivery,
@@ -140,10 +141,12 @@ func (c *Consumer) handleDeliveries(
 		select {
 		case <-ctx.Done():
 			c.logger.Warn("RMQ handler stopping")
+
 			return ctx.Err()
 		case d, hasMore := <-deliveries:
 			if !hasMore {
 				c.logger.Warn("RMQ handler deliveries channel closed.")
+
 				return stacktrace.NewError("RMQ handler deliveries channel closed.")
 			}
 
@@ -171,6 +174,7 @@ func (c *Consumer) handleSingleDelivery(ctx context.Context, d *amqp.Delivery) e
 
 	if c.handler.QueueAutoAck() {
 		c.metric.ObserveAck(true)
+
 		return nil
 	}
 
@@ -197,6 +201,7 @@ func (c *Consumer) handleSingleDelivery(ctx context.Context, d *amqp.Delivery) e
 			"successful ack message",
 			tracingField(d.CorrelationId),
 		)
+
 		return nil
 	case Nack:
 		err := d.Nack(false, acknowledgement.Requeue)

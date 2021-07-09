@@ -24,7 +24,6 @@ import (
 	"path/filepath"
 	"runtime"
 
-	//nolint:goimports
 	tilde "github.com/mattes/go-expand-tilde"
 	"github.com/palantir/stacktrace"
 )
@@ -71,6 +70,7 @@ func (ex *RealOsExecutor) Stderr() io.Writer {
 	if ex.stdErr == nil {
 		return osStderr
 	}
+
 	return ex.stdErr
 }
 
@@ -82,6 +82,7 @@ func (ex *RealOsExecutor) Stdin() io.Reader {
 	if ex.stdin == nil {
 		return osStdin
 	}
+
 	return ex.stdin
 }
 
@@ -93,6 +94,7 @@ func (ex *RealOsExecutor) Stdout() io.Writer {
 	if ex.stdout == nil {
 		return osStdout
 	}
+
 	return ex.stdout
 }
 
@@ -172,6 +174,7 @@ func (ex *RealOsExecutor) ExecuteWithStreams(
 	command.Dir = dir
 
 	err := command.Run()
+
 	return stacktrace.Propagate(err, "executing command failed")
 }
 
@@ -195,6 +198,7 @@ func (ex *RealOsExecutor) ExecuteWithStreamsContext(
 	command.Dir = dir
 
 	err := command.Run()
+
 	return stacktrace.Propagate(err, "executing command failed")
 }
 
@@ -354,6 +358,7 @@ func (ex *RealOsExecutor) CopyFile(src, dst string) error {
 	}
 
 	err = ex.Chmod(dst, fileInfo.Mode())
+
 	return stacktrace.Propagate(err, "failed to change file permissions, path %s", dst)
 }
 

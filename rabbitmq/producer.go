@@ -28,7 +28,7 @@ import (
 
 var ErrProducerConnection = errors.New("RMQ producer has already closed the connection")
 
-// MessageArgs captures the fields related to the message sent to the server
+// MessageArgs captures the fields related to the message sent to the server.
 type MessageArgs struct {
 	// Application or exchange specific fields,
 	// the headers exchange will inspect this field.
@@ -121,5 +121,6 @@ func (p *Producer) Publish(
 
 func (p *Producer) Close() error {
 	err := p.client.Close()
+
 	return stacktrace.Propagate(err, "failed to close RMQ producer")
 }

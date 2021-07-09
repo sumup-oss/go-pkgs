@@ -98,7 +98,8 @@ func (p *RetryableProducer) Publish(
 func (p *RetryableProducer) newProducer(ctx context.Context) (*Producer, error) {
 	if ctx.Err() != nil {
 		p.logger.Info("received context cancel")
-		return nil, nil
+
+		return nil, nil // nolint: nilerr
 	}
 
 	client, err := p.clientFactory(ctx, p.config.RabbitClientConfig)
@@ -110,6 +111,7 @@ func (p *RetryableProducer) newProducer(ctx context.Context) (*Producer, error) 
 	if err != nil {
 		connCloseErr := client.Close()
 		p.logger.Error("cannot close RabbitMQ client connection", zap.Error(connCloseErr))
+
 		return nil, stacktrace.Propagate(err, "RabbitMQ Failed to create new producer")
 	}
 
@@ -148,6 +150,7 @@ func (p *RetryableProducer) initProducer(ctx context.Context) {
 		producer, err := p.newProducerWithBackoff(ctx)
 		if err != nil {
 			p.logger.Info("failed to create producer with backoff", zap.Error(err))
+
 			return
 		}
 
@@ -160,10 +163,12 @@ func (p *RetryableProducer) initProducer(ctx context.Context) {
 		select {
 		case <-ctx.Done():
 			p.logger.Info("received shut down signal")
+
 			err := producer.Close()
 			if err != nil {
 				p.logger.Error("error when closing the producer", zap.Error(err))
 			}
+
 			return
 		case <-producer.closeCh:
 			p.logger.Info("RabbitMQ Producer Client closed the connection, trying to reconnect")

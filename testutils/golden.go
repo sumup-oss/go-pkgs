@@ -30,7 +30,7 @@ func AssertGolden(t *testing.T, path string, actual []byte) {
 
 	// nolint:goconst
 	if os.Getenv("UPDATE_GOLDEN") == "on" {
-		err := ioutil.WriteFile(path, actual, 0644)
+		err := ioutil.WriteFile(path, actual, 0644) // nolint: gosec
 		require.Nil(t, err)
 	}
 
@@ -53,7 +53,7 @@ func AssertGoldenTemplate(t *testing.T, path string, templateVars map[string]str
 			)
 		}
 
-		err := ioutil.WriteFile(path, templateContent, 0644)
+		err := ioutil.WriteFile(path, templateContent, 0644) // nolint: gosec
 		require.Nil(t, err)
 	}
 

@@ -226,7 +226,7 @@ func (git *Git) Pull() error {
 }
 
 func (git *Git) Fetch() error {
-	//@TODO: add --prune-tags when we update to git > 2.17
+	// TODO: add --prune-tags when we update to git > 2.17
 	_, stderr, err := git.commandExecutor.Execute(
 		git.binPath,
 		[]string{"-C", git.dir, "fetch", "--prune"},
@@ -378,7 +378,7 @@ func (git *Git) SetSparseCheckoutPaths(paths []string) error {
 	sparsePaths := strings.Join(paths, "\n")
 	sparseConfigPath := filepath.Join(git.dir, ".git", "info", "sparse-checkout")
 
-	err := ioutil.WriteFile(sparseConfigPath, []byte(sparsePaths), 0755)
+	err := ioutil.WriteFile(sparseConfigPath, []byte(sparsePaths), 0755) // nolint: gosec
 	if err != nil {
 		return fmt.Errorf("error writing to sparse checkout config file. Error: %s", err.Error())
 	}

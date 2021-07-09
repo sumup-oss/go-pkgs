@@ -29,5 +29,6 @@ func NewTokenAuthenticator(token string) *TokenAuthenticator {
 
 func (a *TokenAuthenticator) Authenticate(client Client) error {
 	client.SetToken(a.token)
+
 	return nil
 }

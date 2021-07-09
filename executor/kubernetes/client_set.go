@@ -15,8 +15,6 @@
 package kubernetes
 
 import (
-	"fmt"
-
 	"strings"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -99,12 +97,13 @@ func (c *ClientSet) GetJWT() (string, error) {
 	for _, serviceAccountSecret := range serviceAccountInfo.Secrets {
 		if strings.Contains(serviceAccountSecret.Name, "token") {
 			secretName = serviceAccountSecret.Name
+
 			break
 		}
 	}
 
 	if len(secretName) == 0 {
-		return "", fmt.Errorf(
+		return "", stacktrace.NewError(
 			"no kubernetes service account secret token from namespace %s for service account: %s",
 			c.kubernetesNamespace,
 			c.kubernetesServiceAccountName,

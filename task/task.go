@@ -22,7 +22,6 @@ type TaskInterface interface {
 
 // Task adapts a TaskInterface to TaskFunc required by the task.Group to run tasks.
 func Task(t TaskInterface) TaskFunc {
-	//nolint:gocritic
 	return func(ctx context.Context) error {
 		return t.Run(ctx)
 	}

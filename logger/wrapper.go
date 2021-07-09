@@ -19,7 +19,7 @@ import (
 )
 
 var (
-	// std is the name of the standard logger in stdlib `log`
+	// std is the name of the standard logger in stdlib `log`.
 	std Logger
 	mu  sync.RWMutex
 )
@@ -39,6 +39,7 @@ func SetLogger(logger Logger) {
 func GetLogger() Logger {
 	mu.RLock()
 	defer mu.RUnlock()
+
 	return std
 }
 

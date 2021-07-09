@@ -26,6 +26,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// nolint: thelper
 func GenerateAndWritePrivateKey(t *testing.T, tmpDir, keyName string) (string, *stdRsa.PrivateKey) {
 	privKey, err := stdRsa.GenerateKey(rand.Reader, 2048)
 	require.Nil(t, err)
@@ -45,6 +46,7 @@ func GenerateAndWritePrivateKey(t *testing.T, tmpDir, keyName string) (string, *
 	return keyPath, privKey
 }
 
+// nolint: thelper
 func GenerateAndWritePublicKey(t *testing.T, tmpDir, keyName string, privKey *stdRsa.PrivateKey) string {
 	keyPath := filepath.Join(tmpDir, keyName)
 
@@ -58,7 +60,8 @@ func GenerateAndWritePublicKey(t *testing.T, tmpDir, keyName string, privKey *st
 		},
 	)
 
-	err = ioutil.WriteFile(keyPath, pemBytes, 0644)
+	err = ioutil.WriteFile(keyPath, pemBytes, 0644) // nolint: gosec
 	require.Nil(t, err)
+
 	return keyPath
 }

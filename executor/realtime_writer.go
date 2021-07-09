@@ -33,6 +33,7 @@ type RealtimeWriter struct {
 func NewRealtimeWriter(log logger.Logger, logLevel logger.Level) *RealtimeWriter {
 	buffer := make([]byte, 0, 20)
 	logBuffer := make([]byte, 0)
+
 	return &RealtimeWriter{
 		buffer:    bytes.NewBuffer(buffer),
 		logBuffer: bytes.NewBuffer(logBuffer),
@@ -44,6 +45,7 @@ func NewRealtimeWriter(log logger.Logger, logLevel logger.Level) *RealtimeWriter
 func (writer *RealtimeWriter) Write(p []byte) (n int, err error) {
 	writer.log(p)
 	written, err := writer.buffer.Write(p)
+
 	return written, err
 }
 
@@ -52,6 +54,7 @@ func (writer *RealtimeWriter) log(p []byte) {
 		if b == '\n' {
 			writer.logger.Logf(writer.logLevel, writer.logBuffer.String())
 			writer.logBuffer.Reset()
+
 			continue
 		}
 
@@ -61,5 +64,6 @@ func (writer *RealtimeWriter) log(p []byte) {
 
 func (writer *RealtimeWriter) GetOutput() string {
 	output := writer.buffer.String()
+
 	return removeColorRegex.ReplaceAllString(output, ``)
 }

@@ -38,7 +38,7 @@ type Backoff struct {
 	retryCount uint
 }
 
-// NewBackoffWithRandomGen is used when you want to pass a custom RandomGenerator
+// NewBackoffWithRandomGen is used when you want to pass a custom RandomGenerator.
 func NewBackoffWithRandomGen(randomGen RandomGenerator, config *Config) *Backoff {
 	if config.Base == 0 {
 		config.Base = DefaultConfig.Base
@@ -61,14 +61,14 @@ func NewBackoffWithRandomGen(randomGen RandomGenerator, config *Config) *Backoff
 // NewBackoff uses the golang rand generator from the standard library.
 func NewBackoff(config *Config) *Backoff {
 	return NewBackoffWithRandomGen(
-		rand.New(rand.NewSource(time.Now().UnixNano())),
+		rand.New(rand.NewSource(time.Now().UnixNano())), // nolint: gosec
 		config,
 	)
 }
 
 // Next returns the next duration for the retry.
 func (b *Backoff) Next() time.Duration {
-	d := b.config.Base * (1 << b.retryCount)
+	d := b.config.Base * (1 << b.retryCount) // nolint: durationcheck
 	if d > b.config.Max {
 		d = b.config.Max
 	} else {

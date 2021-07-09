@@ -48,6 +48,7 @@ func (b *Build) Run(ctx context.Context, args ...string) (string, string, error)
 	cmdInstance.Stderr = &stdErrBuffer
 
 	err := cmdInstance.Run()
+
 	return stdoutBuffer.String(), stdErrBuffer.String(), err
 }
 

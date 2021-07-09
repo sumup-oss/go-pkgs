@@ -25,9 +25,9 @@ import (
 // Currently it does not do anything different than zap.Error().
 //
 // Future version should wrap the error with an object that supports Errors interface:
-// type Errors interface {
-//   Errors() []error
-// }
+//   type Errors interface {
+//     Errors() []error
+//   }
 func ErrorField(err error) zap.Field {
 	if err == nil {
 		return zap.Skip()
