@@ -87,6 +87,7 @@ func (c *RetryableConsumer) Run(ctx context.Context) error {
 			select {
 			case <-ctx.Done():
 				c.logger.Info("received context cancel")
+
 				return nil
 			case <-time.After(backoffDuration):
 				continue
@@ -102,7 +103,8 @@ func (c *RetryableConsumer) doRun(ctx context.Context) error {
 
 	if ctx.Err() != nil {
 		c.logger.Info("received context cancel")
-		return nil
+
+		return nil // nolint: nilerr
 	}
 
 	client, err := c.clientFactory(ctx, c.config.RabbitClientConfig)

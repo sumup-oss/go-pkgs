@@ -45,7 +45,7 @@ type DockerBuildOptions struct {
 type DockerNetwork struct {
 	Name string `json:"Name"`
 	ID   string `json:"Id"`
-	IPAМ struct {
+	IPAM struct {
 		Driver string `json:"Driver"`
 		Config []struct {
 			Subnet  string `json:"Subnet"`
@@ -69,12 +69,14 @@ func NewDocker(executor os.CommandExecutor) *Docker {
 func (docker *Docker) Push(ctx context.Context, image string) error {
 	args := []string{"push", image}
 	stdout, stderr, err := docker.commandExecutor.ExecuteContext(ctx, "docker", args, nil, "")
+
 	return stacktrace.Propagate(err, "Stderr: %s, Stdout: %s", stderr, stdout)
 }
 
 func (docker *Docker) Pull(ctx context.Context, image string) error {
 	args := []string{"pull", image}
 	stdout, stderr, err := docker.commandExecutor.ExecuteContext(ctx, "docker", args, nil, "")
+
 	return stacktrace.Propagate(err, "Stderr: %s, Stdout: %s", stderr, stdout)
 }
 
@@ -104,24 +106,28 @@ func (docker *Docker) buildArgs(options *DockerBuildOptions) []string {
 	}
 
 	args = append(args, options.ContextDir)
+
 	return args
 }
 
 func (docker *Docker) Build(ctx context.Context, options *DockerBuildOptions) error {
 	args := docker.buildArgs(options)
 	stdout, stderr, err := docker.commandExecutor.ExecuteContext(ctx, "docker", args, nil, "")
+
 	return stacktrace.Propagate(err, "Stderr: %s, Stdout: %s", stderr, stdout)
 }
 
 func (docker *Docker) Tag(ctx context.Context, oldImage, newImage string) error {
 	args := []string{"tag", oldImage, newImage}
 	stdout, stderr, err := docker.commandExecutor.ExecuteContext(ctx, "docker", args, nil, "")
+
 	return stacktrace.Propagate(err, "Stderr: %s, Stdout: %s", stderr, stdout)
 }
 
 func (docker *Docker) Login(ctx context.Context, username, password, registryURL string) error {
 	args := []string{"login", "-u", username, "-p", password, registryURL}
 	stdout, stderr, err := docker.commandExecutor.ExecuteContext(ctx, "docker", args, nil, "")
+
 	return stacktrace.Propagate(err, "Stderr: %s, Stdout: %s", stderr, stdout)
 }
 
@@ -161,7 +167,7 @@ func (docker *Docker) NetworkGateway(ctx context.Context, name string) (string, 
 		return "", stacktrace.NewError("failed to read docker network configuration")
 	}
 
-	if len(network.IPAМ.Config) == 0 {
+	if len(network.IPAM.Config) == 0 {
 		return "", stacktrace.NewError("no IPAM configuration found for docker network")
 	}
 
@@ -169,8 +175,8 @@ func (docker *Docker) NetworkGateway(ctx context.Context, name string) (string, 
 	// NOTE: Docker has some confirmed regression in terms of setting a `Gateway`.
 	// There are scenarios where it might have a bridge with an IP which is the gateway of
 	// the docker network, but nothing except subnet CIDR set in the configuration.
-	if network.IPAМ.Config[0].Gateway == "" {
-		ip, _, err := net.ParseCIDR(network.IPAМ.Config[0].Subnet)
+	if network.IPAM.Config[0].Gateway == "" {
+		ip, _, err := net.ParseCIDR(network.IPAM.Config[0].Subnet)
 		if err != nil {
 			return "", stacktrace.Propagate(err, "failed to parse IP CIDR for docker network CIDR")
 		}
@@ -179,7 +185,7 @@ func (docker *Docker) NetworkGateway(ctx context.Context, name string) (string, 
 		ipv4[3]++
 		gatewayIP = ipv4.String()
 	} else {
-		gatewayIP = network.IPAМ.Config[0].Gateway
+		gatewayIP = network.IPAM.Config[0].Gateway
 	}
 
 	// NOTE: Prefer network isolation wherever possible by avoiding binding on the docker gateway.
@@ -196,7 +202,7 @@ func (docker *Docker) NetworkGateway(ctx context.Context, name string) (string, 
 			"",
 		)
 		if err != nil {
-			return gatewayIP, nil
+			return gatewayIP, nil // nolint: nilerr
 		}
 
 		matches := linuxIPRouteRegex.FindAllStringSubmatch(string(stdout), -1)
@@ -218,7 +224,7 @@ func (docker *Docker) NetworkGateway(ctx context.Context, name string) (string, 
 			"",
 		)
 		if err != nil {
-			return gatewayIP, nil
+			return gatewayIP, nil // nolint: nilerr
 		}
 
 		matches := darwinIPRouteRegex.FindAllStringSubmatch(string(stdout), -1)

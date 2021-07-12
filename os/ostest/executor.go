@@ -32,6 +32,9 @@ type FakeOsExecutor struct {
 	mock.Mock
 }
 
+// NewFakeOsExecutor creates FakeOsExecutor instance.
+//
+// nolint: thelper
 func NewFakeOsExecutor(t *testing.T) *FakeOsExecutor {
 	fake := &FakeOsExecutor{}
 	fake.Test(t)
@@ -41,16 +44,19 @@ func NewFakeOsExecutor(t *testing.T) *FakeOsExecutor {
 
 func (f *FakeOsExecutor) Getwd() (string, error) {
 	args := f.Called()
+
 	return args.String(0), args.Error(1)
 }
 
 func (f *FakeOsExecutor) Chdir(dir string) error {
 	args := f.Called(dir)
+
 	return args.Error(0)
 }
 
 func (f *FakeOsExecutor) Mkdir(dirname string, perm stdOs.FileMode) error {
 	args := f.Called(dirname, perm)
+
 	return args.Error(0)
 }
 
@@ -67,10 +73,11 @@ func (f *FakeOsExecutor) Execute(
 
 	var returnStdout, returnStderr []byte
 	if rawStdout != nil {
-		returnStdout = rawStdout.([]byte)
+		returnStdout = rawStdout.([]byte) // nolint:forcetypeassert
 	}
+
 	if rawStderr != nil {
-		returnStderr = rawStderr.([]byte)
+		returnStderr = rawStderr.([]byte) // nolint:forcetypeassert
 	}
 
 	return returnStdout, returnStderr, returnErr
@@ -90,10 +97,11 @@ func (f *FakeOsExecutor) ExecuteContext(
 
 	var returnStdout, returnStderr []byte
 	if rawStdout != nil {
-		returnStdout = rawStdout.([]byte)
+		returnStdout = rawStdout.([]byte) // nolint:forcetypeassert
 	}
+
 	if rawStderr != nil {
-		returnStderr = rawStderr.([]byte)
+		returnStderr = rawStderr.([]byte) // nolint:forcetypeassert
 	}
 
 	return returnStdout, returnStderr, returnErr
@@ -101,6 +109,7 @@ func (f *FakeOsExecutor) ExecuteContext(
 
 func (f *FakeOsExecutor) MkdirAll(dirname string, perm stdOs.FileMode) error {
 	args := f.Called(dirname, perm)
+
 	return args.Error(0)
 }
 
@@ -162,6 +171,7 @@ func (f *FakeOsExecutor) Stat(filepath string) (stdOs.FileInfo, error) {
 
 func (f *FakeOsExecutor) IsNotExist(err error) bool {
 	args := f.Called(err)
+
 	return args.Bool(0)
 }
 
@@ -180,21 +190,25 @@ func (f *FakeOsExecutor) OpenFile(path string, flag int, perm stdOs.FileMode) (*
 
 func (f *FakeOsExecutor) WriteFile(path string, data []byte, perm stdOs.FileMode) error {
 	args := f.Called(path, data, perm)
+
 	return args.Error(0)
 }
 
 func (f *FakeOsExecutor) ExpandTilde(path string) (string, error) {
 	args := f.Called(path)
+
 	return args.String(0), args.Error(1)
 }
 
 func (f *FakeOsExecutor) Getenv(key string) string {
 	args := f.Called(key)
+
 	return args.String(0)
 }
 
 func (f *FakeOsExecutor) GetOS() string {
 	args := f.Called()
+
 	return args.String(0)
 }
 
@@ -207,6 +221,7 @@ func (f *FakeOsExecutor) ExecuteWithStreams(
 	stderr io.Writer,
 ) error {
 	args := f.Called(cmd, arg, env, dir, stdout, stderr)
+
 	return args.Error(0)
 }
 
@@ -220,16 +235,19 @@ func (f *FakeOsExecutor) ExecuteWithStreamsContext(
 	stderr io.Writer,
 ) error {
 	args := f.Called(ctx, cmd, arg, env, dir, stdout, stderr)
+
 	return args.Error(0)
 }
 
 func (f *FakeOsExecutor) ResolvePath(path string) (string, error) {
 	args := f.Called(path)
+
 	return args.String(0), args.Error(1)
 }
 
 func (f *FakeOsExecutor) Remove(path string) error {
 	args := f.Called(path)
+
 	return args.Error(0)
 }
 
@@ -268,21 +286,25 @@ func (f *FakeOsExecutor) ReadFile(filename string) (bytes []byte, e error) {
 
 func (f *FakeOsExecutor) IsDir(path string) error {
 	args := f.Called(path)
+
 	return args.Error(0)
 }
 
 func (f *FakeOsExecutor) IsFile(path string) error {
 	args := f.Called(path)
+
 	return args.Error(0)
 }
 
 func (f *FakeOsExecutor) RemoveAll(path string) error {
 	args := f.Called(path)
+
 	return args.Error(0)
 }
 
 func (f *FakeOsExecutor) TempDir(dir, prefix string) (string, error) {
 	args := f.Called(dir, prefix)
+
 	return args.String(0), args.Error(1)
 }
 
@@ -310,21 +332,25 @@ func (f *FakeOsExecutor) ReadDir(dirname string) ([]stdOs.FileInfo, error) {
 
 func (f *FakeOsExecutor) Chmod(name string, mode stdOs.FileMode) error {
 	args := f.Called(name, mode)
+
 	return args.Error(0)
 }
 
 func (f *FakeOsExecutor) CopyDir(src, dst string) error {
 	args := f.Called(src, dst)
+
 	return args.Error(0)
 }
 
 func (f *FakeOsExecutor) CopyFile(src, dst string) error {
 	args := f.Called(src, dst)
+
 	return args.Error(0)
 }
 
 func (f *FakeOsExecutor) CopyLink(src, dst string) error {
 	args := f.Called(src, dst)
+
 	return args.Error(0)
 }
 
@@ -341,11 +367,13 @@ func (f *FakeOsExecutor) Open(name string) (*stdOs.File, error) {
 
 func (f *FakeOsExecutor) Readlink(name string) (string, error) {
 	args := f.Called(name)
+
 	return args.String(0), args.Error(1)
 }
 
 func (f *FakeOsExecutor) Symlink(oldname, newname string) error {
 	args := f.Called(oldname, newname)
+
 	return args.Error(0)
 }
 
@@ -374,15 +402,18 @@ func (f *FakeOsExecutor) SetStdout(v io.Writer) {
 
 func (f *FakeOsExecutor) RemoveContents(path string, limit int) error {
 	args := f.Called(path, limit)
+
 	return args.Error(0)
 }
 
 func (f *FakeOsExecutor) IsExist(err error) bool {
 	args := f.Called(err)
+
 	return args.Bool(0)
 }
 
 func (f *FakeOsExecutor) Rename(oldPath, newPath string) error {
 	args := f.Called(oldPath, newPath)
+
 	return args.Error(0)
 }

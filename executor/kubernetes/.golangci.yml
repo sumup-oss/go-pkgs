@@ -42,7 +42,7 @@ linters-settings:
   lll:
     line-length: 140
   goimports:
-    local-prefixes: github.com/sumup-oss/go-pkgs
+    local-prefixes: github.com/sumup-oss/go-pkgs/executor/kubernetes
   gocritic:
     enabled-tags:
       - performance

@@ -64,6 +64,7 @@ func (c *Client) RawWrite(path string, data map[string]interface{}) (*api.Secret
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "error writing to Vault path: %s", path)
 	}
+
 	return secret, err
 }
 
@@ -90,7 +91,7 @@ func (c *Client) Write(path string, data map[string]interface{}) (*api.Secret, e
 	return c.RawWrite(path, data)
 }
 
-// Write deletes secret at `path` and handles both V1 and V2 KV secret API of Vault.
+// Delete deletes secret at `path` and handles both V1 and V2 KV secret API of Vault.
 func (c *Client) Delete(path string) (*api.Secret, error) {
 	mountPath, v2, err := c.isKVv2(path)
 	if err != nil {
@@ -110,6 +111,7 @@ func (c *Client) Delete(path string) (*api.Secret, error) {
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "error deleting from Vault path: %s", path)
 	}
+
 	return secret, err
 }
 
@@ -169,7 +171,7 @@ func (c *Client) Read(path string) (*api.Secret, error) {
 
 // kvPreflightVersionRequest executes a Vault API request for `path` to determine
 // the version of the kv backend. It defaults to version 1 if it's not possible to get a version.
-// Returned values are `mounthPath, version, error`
+// Returned values are `mounthPath, version, error`.
 func (c *Client) kvPreflightVersionRequest(path string) (string, int, error) {
 	currentWrappingLookupFunc := c.vaultClient.CurrentWrappingLookupFunc()
 	c.vaultClient.SetWrappingLookupFunc(nil)
@@ -201,7 +203,7 @@ func (c *Client) kvPreflightVersionRequest(path string) (string, int, error) {
 	}
 	var mountPath string
 	if mountPathRaw, ok := secret.Data["path"]; ok {
-		mountPath = mountPathRaw.(string)
+		mountPath = mountPathRaw.(string) // nolint: forcetypeassert
 	}
 	options := secret.Data["options"]
 	if options == nil {
@@ -211,7 +213,7 @@ func (c *Client) kvPreflightVersionRequest(path string) (string, int, error) {
 	if versionRaw == nil {
 		return mountPath, 1, nil
 	}
-	version := versionRaw.(string)
+	version := versionRaw.(string) // nolint: forcetypeassert
 	switch version {
 	case "", "1":
 		return mountPath, 1, nil
@@ -245,6 +247,7 @@ func (c *Client) addPrefixToVKVPath(pathArg, mountPath, apiPrefix string) string
 		return path.Join(mountPath, apiPrefix)
 	default:
 		pathArg = strings.TrimPrefix(pathArg, mountPath)
+
 		return path.Join(mountPath, apiPrefix, pathArg)
 	}
 }
@@ -275,6 +278,7 @@ func (c *Client) kvReadRequest(path string, params map[string]string) (*api.Secr
 		if secret != nil && (len(secret.Warnings) > 0 || len(secret.Data) > 0) {
 			return secret, nil
 		}
+
 		return secret, nil
 	}
 	if err != nil {

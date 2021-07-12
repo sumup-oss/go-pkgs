@@ -139,6 +139,7 @@ func NewKubectl(
 func (k *Kubectl) ResetExecutor(commandExecutor pkgOs.CommandExecutor) pkgOs.CommandExecutor {
 	old := k.commandExecutor
 	k.commandExecutor = commandExecutor
+
 	return old
 }
 
@@ -154,6 +155,7 @@ func (k *Kubectl) compileCommand() []string {
 
 func (k *Kubectl) executeCommand(args []string, env []string) ([]byte, []byte, error) {
 	args = append(args, k.compileCommand()...)
+
 	return k.commandExecutor.Execute(k.commandString, args, env, "")
 }
 
@@ -165,23 +167,27 @@ func (k *Kubectl) Apply(manifest string, namespace string) error {
 	}
 
 	_, _, err := k.executeCommand(commandArgs, nil)
+
 	return err
 }
 
 func (k *Kubectl) Delete(manifest string) error {
 	commandArgs := append([]string{"delete", "--force"}, "-f", manifest)
 	_, _, err := k.executeCommand(commandArgs, nil)
+
 	return err
 }
 
 func (k *Kubectl) Create(manifest string) error {
 	commandArgs := append([]string{"create"}, "-f", manifest)
 	_, _, err := k.executeCommand(commandArgs, nil)
+
 	return err
 }
 
 func (k *Kubectl) ClusterInfo() error {
 	_, _, err := k.executeCommand([]string{"cluster-info"}, nil)
+
 	return err
 }
 
@@ -404,7 +410,7 @@ func (k *Kubectl) GetIngresses(namespace string) ([]*KubernetesIngress, error) {
 func (k *Kubectl) ApplyConfigmap(name, namespace string, data map[string]string) error {
 	fd, err := ioutil.TempFile("", "kubernetes-configmap.yaml")
 	if err != nil {
-		return nil
+		return nil // nolint: nilerr
 	}
 
 	defer func() {
@@ -445,7 +451,7 @@ func (k *Kubectl) ApplyConfigmap(name, namespace string, data map[string]string)
 func (k *Kubectl) ApplyService(service *KubernetesService) error {
 	fd, err := ioutil.TempFile("", "kubernetes-service.json")
 	if err != nil {
-		return nil
+		return nil // nolint: nilerr
 	}
 
 	defer func() {
@@ -474,6 +480,7 @@ func (k *Kubectl) ApplyService(service *KubernetesService) error {
 func (k *Kubectl) RolloutStatus(timeout time.Duration, resource, namespace string) error {
 	commandArgs := []string{"-n", namespace, "rollout", "status", resource, "--timeout", timeout.String()}
 	_, _, err := k.executeCommand(commandArgs, nil)
+
 	return err
 }
 

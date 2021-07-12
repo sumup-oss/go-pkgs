@@ -33,6 +33,7 @@ func IsRetryableError(err error) bool {
 	}
 
 	retryableErr, ok := err.(RetryableError)
+
 	return ok && retryableErr.IsRetryable()
 }
 
@@ -67,6 +68,7 @@ func Retry(retryInterval time.Duration, retryFunc TaskFunc) TaskFunc {
 			select {
 			case <-ctx.Done():
 				retryTimer.Stop()
+
 				return nil
 			case <-retryTimer.C:
 			}
@@ -128,6 +130,7 @@ func RetryUntil(maxAttempts int, retryInterval time.Duration, retryFunc TaskFunc
 			select {
 			case <-ctx.Done():
 				retryTimer.Stop()
+
 				return nil
 			case <-retryTimer.C:
 			}
@@ -203,6 +206,7 @@ func RetryWithDeadline(
 				case <-retryCtx.Done():
 					retryTimer.Stop()
 					err = nil
+
 					return
 				case <-retryTimer.C:
 				}
@@ -218,6 +222,7 @@ func RetryWithDeadline(
 		case <-deadlineTimer.C:
 			cancel()
 			<-doneChan
+
 			return NewDeadlineError(timeoutDeadline, lastErr)
 		}
 	}
@@ -261,6 +266,7 @@ func RetryWithBackoff(maxAttempts int, backoff Backoff, retryFunc TaskFunc) Task
 			select {
 			case <-ctx.Done():
 				retryTimer.Stop()
+
 				return nil
 			case <-retryTimer.C:
 			}

@@ -84,6 +84,7 @@ func (g *Group) Wait(ctx context.Context) error {
 	}
 
 	g.wg.Wait()
+
 	return g.firstRunErr
 }
 

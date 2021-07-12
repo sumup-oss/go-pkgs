@@ -40,6 +40,7 @@ func NewHelm(executor os.CommandExecutor) *Helm {
 func (h *Helm) ResetExecutor(commandExecutor os.CommandExecutor) os.CommandExecutor {
 	old := h.commandExecutor
 	h.commandExecutor = commandExecutor
+
 	return old
 }
 

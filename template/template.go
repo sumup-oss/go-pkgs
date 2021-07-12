@@ -33,6 +33,7 @@ func MustParseTemplate(name, content string) *template.Template {
 		Funcs(FuncMap).
 		Option("missingkey=error").
 		Parse(content)
+
 	return template.Must(t, err)
 }
 
@@ -51,5 +52,6 @@ func MustParseTemplateWithFuncs(name string, funcs template.FuncMap, content str
 		Funcs(funcMap).
 		Option("missingkey=error").
 		Parse(content)
+
 	return template.Must(t, err)
 }

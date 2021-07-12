@@ -25,7 +25,7 @@ import (
 )
 
 const (
-	// Logger encoding types
+	// Logger encoding types.
 	EncodingJSON  = "json"
 	EncodingPlain = "plain"
 

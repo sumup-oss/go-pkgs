@@ -20,7 +20,7 @@ import (
 	"testing"
 )
 
-// TestDir creates a new temporary dir using specified `dirPrefix`
+// TestDir creates a new temporary dir using specified `dirPrefix`.
 func TestDir(t *testing.T, dirPrefix string) string {
 	t.Helper()
 
@@ -28,10 +28,11 @@ func TestDir(t *testing.T, dirPrefix string) string {
 	if err != nil {
 		t.Fatalf("err: %v", err)
 	}
+
 	return tmp
 }
 
-// TestChdir changes current dir to specified `dir`
+// TestChdir changes current dir to specified `dir`.
 func TestChdir(t *testing.T, dir string) {
 	t.Helper()
 

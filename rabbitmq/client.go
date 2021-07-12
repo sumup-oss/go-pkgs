@@ -43,9 +43,9 @@ type ClientConfig struct {
 	InitialReconnectDelay time.Duration
 }
 
-// A simple client that tries to connect to rabbitmq and create a channel
+// A simple client that tries to connect to rabbitmq and create a channel.
 //
-// Does not attempt to reconnect if the connection drops
+// Does not attempt to reconnect if the connection drops.
 type RabbitMQClient struct {
 	amqpURI               string
 	conn                  *amqp.Connection
@@ -68,16 +68,19 @@ func NewRabbitMQClient(ctx context.Context, cfg *ClientConfig) (RabbitMQClientIn
 		conn, dialErr := amqp.Dial(client.amqpURI)
 		if dialErr != nil {
 			cfg.Metric.ObserveRabbitMQConnectionRetry()
+
 			return task.NewRetryableError(dialErr)
 		}
 
 		client.conn = conn
 		client.metric.ObserveRabbitMQConnection()
+
 		return nil
 	})(ctx)
 
 	if err != nil {
 		client.metric.ObserveRabbitMQChanelConnectionFailed()
+
 		return nil, stacktrace.Propagate(err, "couldn't dial rabbitmq")
 	}
 
@@ -93,15 +96,18 @@ func (c *RabbitMQClient) CreateChannel(ctx context.Context) (*amqp.Channel, erro
 		channel, channelErr = c.conn.Channel()
 		if channelErr != nil {
 			c.metric.ObserveRabbitMQChanelConnectionRetry()
+
 			return task.NewRetryableError(channelErr)
 		}
 
 		c.metric.ObserveRabbitMQChanelConnection()
+
 		return nil
 	})(ctx)
 
 	if err != nil {
 		c.metric.ObserveRabbitMQChanelConnectionFailed()
+
 		return nil, stacktrace.Propagate(err, "couldn't create channel for rabbitmq")
 	}
 
@@ -143,5 +149,6 @@ func (c *RabbitMQClient) Setup(ctx context.Context, setup *Setup) error {
 
 func (c *RabbitMQClient) Close() error {
 	err := c.conn.Close()
+
 	return stacktrace.Propagate(err, "RMQ connection close")
 }

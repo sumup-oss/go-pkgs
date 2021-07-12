@@ -87,6 +87,7 @@ func (hook *LogrusHook) Fire(entry *logrus.Entry) error {
 		Time:    entry.Time,
 		Fields:  make(map[string]interface{}),
 	}
+
 	return hook.Hook.Fire(basicEntry)
 }
 
@@ -122,13 +123,6 @@ func (std *LogrusLogger) SetOutput(out io.Writer) {
 	std.internalLogger.Out = out
 }
 
-//// SetFormatter sets the standard logger formatter.
-//func (std *LogrusLogger) SetFormatter(formatter logrus.Formatter) {
-//	std.mu.Lock()
-//	defer std.mu.Unlock()
-//	std.internalLogger.Formatter = formatter
-//}
-
 // SetLevel sets the standard logger level.
 func (std *LogrusLogger) SetLevel(level Level) {
 	std.mu.Lock()
@@ -141,6 +135,7 @@ func (std *LogrusLogger) SetLevel(level Level) {
 func (std *LogrusLogger) GetLevel() Level {
 	std.mu.Lock()
 	defer std.mu.Unlock()
+
 	return Level(std.internalLogger.Level)
 }
 

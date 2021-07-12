@@ -92,6 +92,7 @@ func (w *BufferedWriter) Write(data []byte) (int, error) {
 	}
 
 	_, err = w.writer.Write(data)
+
 	return written, err
 }
 

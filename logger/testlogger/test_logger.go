@@ -43,9 +43,10 @@ func NewTestLogger(level logger.Level) *TestLogger {
 	}
 }
 
-// Taken from logrus implementation
+// Taken from logrus implementation.
 func (tl *TestLogger) sprintlnn(args ...interface{}) string {
 	msg := fmt.Sprintln(args...)
+
 	return msg[:len(msg)-1]
 }
 
@@ -58,6 +59,7 @@ func (tl *TestLogger) SetLevel(level logger.Level) {
 func (tl *TestLogger) GetLevel() logger.Level {
 	tl.mu.Lock()
 	defer tl.mu.Unlock()
+
 	return tl.Level
 }
 

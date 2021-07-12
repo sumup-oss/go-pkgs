@@ -5,9 +5,9 @@ const (
 	KubernetesJobStatusActive
 	KubernetesJobStatusComplete
 	KubernetesJobStatusFailed
-	// kubernetes condition statuses
+	// kubernetes condition statuses.
 	kubernetesConditionStatusTrue = "True"
-	// kubernetes condition types
+	// kubernetes condition types.
 	kubernetesJobConditionComplete = "Complete"
 	kubernetesJobConditionFailed   = "Failed"
 )
