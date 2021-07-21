@@ -394,6 +394,39 @@ func TestRealOsExecutor_Getenv(t *testing.T) {
 	)
 }
 
+func TestRealOsExecutor_Setenv(t *testing.T) {
+	t.Run(
+		"it uses builtin 'osSetenv'",
+		func(t *testing.T) {
+			keyArg := "EXAMPLE_HOME"
+			valueArg := "EXAMPLE_VALUE"
+
+			called := false
+			var calledKey, calledValue string
+			calledReturn := errors.New("setEnvTEST")
+
+			osSetenv = func(key, value string) error {
+				called = true
+				calledKey = key
+				calledValue = value
+
+				return calledReturn
+			}
+			defer func() {
+				osSetenv = os.Setenv
+			}()
+
+			osExecutor := &RealOsExecutor{}
+			actualErr := osExecutor.Setenv(keyArg, valueArg)
+
+			assert.True(t, called)
+			assert.Equal(t, calledKey, keyArg)
+			assert.Equal(t, calledValue, valueArg)
+			assert.Equal(t, actualErr, calledReturn)
+		},
+	)
+}
+
 func TestRealOsExecutor_GetOS(t *testing.T) {
 	t.Run(
 		"it uses `runtime.GOOS`",

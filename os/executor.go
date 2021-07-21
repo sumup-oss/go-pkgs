@@ -126,6 +126,10 @@ func (ex *RealOsExecutor) Getenv(key string) string {
 	return osGetenv(key)
 }
 
+func (ex *RealOsExecutor) Setenv(key, value string) error {
+	return osSetenv(key, value)
+}
+
 func (ex *RealOsExecutor) GetOS() string {
 	return runtime.GOOS
 }

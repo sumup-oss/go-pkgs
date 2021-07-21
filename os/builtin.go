@@ -39,6 +39,7 @@ var osChmod = os.Chmod
 var osCreate = os.Create
 var osExit = os.Exit
 var osGetenv = os.Getenv
+var osSetenv = os.Setenv
 var osGetwd = os.Getwd
 var osIsExist = os.IsExist
 var osIsNotExist = os.IsNotExist
