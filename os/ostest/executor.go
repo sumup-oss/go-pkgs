@@ -206,6 +206,12 @@ func (f *FakeOsExecutor) Getenv(key string) string {
 	return args.String(0)
 }
 
+func (f *FakeOsExecutor) Setenv(key, value string) error {
+	args := f.Called(key, value)
+
+	return args.Error(0)
+}
+
 func (f *FakeOsExecutor) GetOS() string {
 	args := f.Called()
 
