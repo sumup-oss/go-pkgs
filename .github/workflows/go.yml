@@ -13,7 +13,7 @@ jobs:
       matrix:
         golang: ["1.13", "1.12"]
         os: ["ubuntu-latest", "macos-latest"]
-        module: [".", "./executor/kubernetes"]
+        module: [".", "./executor/kubernetes", "./errors"]
     runs-on: ${{ matrix.os }}
     steps:
     - name: Remove previous jobs
