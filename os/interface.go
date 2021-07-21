@@ -36,6 +36,7 @@ type (
 		Exit(statusCode int)
 		ExpandTilde(path string) (string, error)
 		Getenv(key string) string
+		Setenv(key, value string) error
 		GetOS() string
 		Getwd() (string, error)
 		IsDir(path string) error
