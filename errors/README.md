@@ -68,7 +68,7 @@ string as input.
 newErr := fmt.Errorf("open file failed, %w", oldErr)
 ```
 
-We want to be able to add sentinel and also custom error type instances to the chain.
+We want to be able to add [sentinel](#creating-errors) and also custom error type instances to the chain.
 
 And we want this to be easy for the user. We don't want the users to write wrapping logic into
 their custom error types.
@@ -93,8 +93,8 @@ The chain looks like this:
 That way it is possible to have `Wrap` and `WrapError` functions, where the `Wrap` function
 works as the standard one, while `WrapError` works by placing an user defined error in the chain.
 
-This is useful for the user, who can use `Is` and `As` for searching those sentinel and user defined
-error types.
+This is useful for the user, who can use `Is` and `As` for searching those 
+[sentinel](#creating-errors) and user defined error types.
 
 ```golang
 // sentinel error
@@ -203,6 +203,10 @@ for err != nil {
 
 You can create sentinel errors with `errors.New` as before.
 
+_Sentinel errors are errors as values. They are typically defined as public variables
+and are returned in case of an expected error condition. The user code checks for such expected
+errors according to its specific needs._
+
 ```golang
 var (
   ErrFoo = errors.New("foo error")
@@ -257,7 +261,7 @@ You can wrap errors by using `Wrap` function.
 newError := errors.Wrap(oldError, "cannot open file %s", filePath)
 ```
 
-You can also wrap errors by using sentinel errors, or instances of your own error types by using
+You can also wrap errors by using [sentinel](#creating-errors) errors, or instances of your own error types by using
 `WrapError`.
 
 ```golang
@@ -556,3 +560,5 @@ for err != nil {
   err = UnwrapHidden(err)
 }
 ```
+
+
