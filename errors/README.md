@@ -244,12 +244,12 @@ func Foo() error {
 }
 ```
 
-In that case you can use `NewError`. It just adds stack trace information.
+In that case you can use `Propagate`. It just adds stack trace information.
 
 ```golang
 func Foo() error {
   // returns custom error wrapped with stack trace information.
-  return errors.NewError(NewCustomError("foo failed"))
+  return errors.Propagate(NewCustomError("foo failed"))
 }
 ```
 
@@ -471,7 +471,7 @@ Creating a custom error type is nothing special. You do it the way you usually d
 All the wrap functions and `Is`, `As`, `Unwrap` will work with your custom types.
 
 With a pure custom type if you want to collect stack trace you must return it with one of the
-wrapper functions or using `NewError`.
+wrapper functions or using `Propagate`.
 
 ```golang
 func Foo() error {
