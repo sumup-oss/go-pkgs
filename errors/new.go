@@ -33,15 +33,19 @@ func New(format string, a ...interface{}) error {
 	}
 }
 
-// NewError creates a new error from existing error, by wrapping it with stack trace information.
+// Propagate creates a new error from existing error, by wrapping it with stack trace information.
 //
 // Most of the time users should use Wrap, WrapError, Hide and HideError.
 //
 // But sometimes the error does not need wrapping, since it contains enough context.
 // And wrapping will create a chain of two errors with the same description
 // (example: "foo failed: foo failed"). All it is needed is a stack trace.
-// NewError does exactly that, it just adds a stack trace.
-func NewError(err error) error {
+// Propagate does exactly that, it just adds a stack trace.
+func Propagate(err error) error {
+	if err == nil {
+		return nil
+	}
+
 	// The err is already wrapped.
 	wrapped, ok := err.(*wrapError)
 	if ok {
