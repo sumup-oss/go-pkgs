@@ -84,17 +84,6 @@ type Configuration struct {
 	SyslogTag string
 }
 
-type StructuredLogger interface {
-	Panic(msg string, fields ...zap.Field)
-	Fatal(msg string, fields ...zap.Field)
-	Error(msg string, fields ...zap.Field)
-	Info(msg string, fields ...zap.Field)
-	Warn(msg string, fields ...zap.Field)
-	Debug(msg string, fields ...zap.Field)
-	GetLevel() zapcore.Level
-	Sync() error
-}
-
 func NewZapLogger(config Configuration) (*ZapLogger, error) {
 	encoder, err := newEncoder(config.Encoding, &defaultZapEncoderConfig)
 	if err != nil {
