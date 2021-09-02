@@ -41,7 +41,7 @@ type StructuredNopLogger struct {
 
 // NewStructuredNopLogger returns a no-op StructuredLogger.
 //
-// Note that if the passed level is not recognised it will default to INFO.
+// Note that if the passed level is not recognized it will default to INFO.
 func NewStructuredNopLogger(level string) *StructuredNopLogger {
 	zapLevel, ok := zapLogLevels[level]
 	if !ok {

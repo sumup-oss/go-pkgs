@@ -84,7 +84,10 @@ type errorObjectField struct {
 
 func (e *errorObjectField) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 	enc.AddString("error", fmt.Sprintf("%s", e.err))
-	enc.AddArray("trace", e)
+	err := enc.AddArray("trace", e)
+	if err != nil {
+		return err
+	}
 
 	return nil
 }
@@ -92,7 +95,11 @@ func (e *errorObjectField) MarshalLogObject(enc zapcore.ObjectEncoder) error {
 func (e *errorObjectField) MarshalLogArray(enc zapcore.ArrayEncoder) error {
 	err := e.err
 	for err != nil {
-		enc.AppendObject(&errorStacktrace{err: err})
+		addErr := enc.AppendObject(&errorStacktrace{err: err})
+		if addErr != nil {
+			return addErr
+		}
+
 		err = errors.UnwrapHidden(err)
 	}
 
