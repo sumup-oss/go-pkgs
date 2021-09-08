@@ -1,6 +1,7 @@
 package backoff
 
 import (
+	"math/rand"
 	"time"
 )
 
@@ -55,10 +56,16 @@ type Backoff struct {
 
 // NewBackoff uses the golang rand generator from the standard library.
 //
-// It is safe to be used in multiple go routines.
+// It is NOT safe to be used in multiple go routines.
+//
+// If you need to repeatedly create backoff objects in multiple go routines and want to share
+// a random generator see BackoffFactory.
+//
+// Sharing a random generator is good, since every time a generator is created it must be seeded,
+// which is expensive operation.
 func NewBackoff(config *Config) *Backoff {
 	return NewBackoffWithRandomGen(
-		DefaultRandomGenerator(),
+		rand.New(rand.NewSource(time.Now().UnixNano())), // nolint: gosec
 		config,
 	)
 }
