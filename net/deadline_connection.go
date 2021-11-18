@@ -10,12 +10,12 @@ import (
 // It is essential in network communication where the network is unreliable.
 type DeadlineConnection struct {
 	net.Conn
-	readDeadlineTimeout  time.Duration
-	writeDeadlineTimeout time.Duration
+	ReadDeadlineTimeout  time.Duration
+	WriteDeadlineTimeout time.Duration
 }
 
 func (d *DeadlineConnection) Read(b []byte) (int, error) {
-	err := d.Conn.SetReadDeadline(time.Now().Add(d.readDeadlineTimeout))
+	err := d.Conn.SetReadDeadline(time.Now().Add(d.ReadDeadlineTimeout))
 	if err != nil {
 		return 0, err
 	}
@@ -24,7 +24,7 @@ func (d *DeadlineConnection) Read(b []byte) (int, error) {
 }
 
 func (d *DeadlineConnection) Write(b []byte) (int, error) {
-	err := d.Conn.SetWriteDeadline(time.Now().Add(d.writeDeadlineTimeout))
+	err := d.Conn.SetWriteDeadline(time.Now().Add(d.WriteDeadlineTimeout))
 	if err != nil {
 		return 0, err
 	}
