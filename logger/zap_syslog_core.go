@@ -16,8 +16,9 @@ package logger
 
 import (
 	gsyslog "github.com/hashicorp/go-syslog"
-	"github.com/pkg/errors"
 	"go.uber.org/zap/zapcore"
+
+	"github.com/sumup-oss/go-pkgs/errors"
 )
 
 type ZapSyslogCore struct {
@@ -75,7 +76,7 @@ func (core *ZapSyslogCore) Write(entry zapcore.Entry, fields []zapcore.Field) er
 	case zapcore.DPanicLevel, zapcore.PanicLevel, zapcore.FatalLevel:
 		return core.writer.WriteLevel(gsyslog.LOG_CRIT, message)
 	default:
-		return errors.Errorf("unknown log level: %v", entry.Level)
+		return errors.New("unknown log level: %v", entry.Level)
 	}
 }
 
