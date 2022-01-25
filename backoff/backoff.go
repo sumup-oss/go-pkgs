@@ -99,7 +99,7 @@ func NewBackoffWithRandomGen(randomGen RandomGenerator, config *Config) *Backoff
 
 // Next returns the next duration for the retry.
 func (b *Backoff) Next() time.Duration {
-	d := b.config.Base * (1 << b.retryCount) // nolint: durationcheck
+	d := b.config.Base * (1 << b.retryCount)
 	if d > b.config.Max {
 		d = b.config.Max
 	} else {

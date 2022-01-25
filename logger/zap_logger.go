@@ -82,9 +82,11 @@ type Configuration struct {
 	SyslogFacility string
 	// SyslogTag is tag for all messages produced
 	SyslogTag string
+	// Fields is an optional slice of fields which will be logged on each log invokation
+	Fields []zapcore.Field
 }
 
-func NewZapLogger(config Configuration) (*ZapLogger, error) {
+func NewZapLogger(config Configuration) (*ZapLogger, error) { //nolint:gocritic
 	encoder, err := newEncoder(config.Encoding, &defaultZapEncoderConfig)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "creating logger encoder failed")
@@ -119,6 +121,12 @@ func NewZapLogger(config Configuration) (*ZapLogger, error) {
 		zapcore.NewTee(cores...),
 		zap.AddCaller(),
 	)
+
+	if config.Fields != nil && len(config.Fields) > 0 {
+		for _, f := range config.Fields {
+			logger = logger.With(f)
+		}
+	}
 
 	return &ZapLogger{
 		Logger: logger,
