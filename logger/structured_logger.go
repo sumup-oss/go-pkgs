@@ -26,6 +26,11 @@ type StructuredLogger interface {
 	Info(msg string, fields ...zap.Field)
 	Warn(msg string, fields ...zap.Field)
 	Debug(msg string, fields ...zap.Field)
+
+	// With creates a child logger and adds structured context to it. Fields added
+	// to the child don't affect the parent, and vice versa.
+	With(fields ...zap.Field) StructuredLogger
+
 	GetLevel() zapcore.Level
 	Sync() error
 }
@@ -56,4 +61,13 @@ func NewStructuredNopLogger(level string) *StructuredNopLogger {
 
 func (z *StructuredNopLogger) GetLevel() zapcore.Level {
 	return z.level
+}
+
+// With creates a child logger and adds structured context to it. Fields added
+// to the child don't affect the parent, and vice versa.
+func (z *StructuredNopLogger) With(fields ...zap.Field) StructuredLogger {
+	return &StructuredNopLogger{
+		Logger: z.Logger.With(fields...),
+		level:  z.level,
+	}
 }

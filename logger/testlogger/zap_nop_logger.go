@@ -41,3 +41,12 @@ func NewZapNopLogger() *ZapNopLogger {
 func (z *ZapNopLogger) GetLevel() zapcore.Level {
 	return z.level
 }
+
+// With creates a child logger and adds structured context to it. Fields added
+// to the child don't affect the parent, and vice versa.
+func (z *ZapNopLogger) With(fields ...zap.Field) logger.StructuredLogger {
+	return &ZapNopLogger{
+		Logger: z.Logger.With(fields...),
+		level:  z.level,
+	}
+}

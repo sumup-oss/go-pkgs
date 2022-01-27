@@ -165,3 +165,12 @@ type ZapLogger struct {
 func (z *ZapLogger) GetLevel() zapcore.Level {
 	return z.level
 }
+
+// With creates a child logger and adds structured context to it. Fields added
+// to the child don't affect the parent, and vice versa.
+func (z *ZapLogger) With(fields ...zap.Field) StructuredLogger {
+	return &ZapLogger{
+		Logger: z.Logger.With(fields...),
+		level:  z.level,
+	}
+}
