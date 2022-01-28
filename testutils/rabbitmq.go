@@ -27,13 +27,15 @@ import (
 )
 
 const (
-	RabbitMqDockerImage             = "rabbitmq"
-	DefaultRabbitMqVersion          = "3"
-	DefaultRabbitMqDockerDaemonHost = "unix:///var/run/docker.sock"
-	DefaultRabbitMqHost             = "127.0.0.1"
-	DefaultRabbitMqPort             = 5672
-	DefaultRabbitMqUser             = "guest"
-	DefaultRabbitMqPassword         = "guest"
+	RabbitMqDockerImage                  = "rabbitmq"
+	DefaultRabbitMqVersion               = "3"
+	DefaultRabbitMqDockerDaemonHost      = "unix:///var/run/docker.sock"
+	DefaultRabbitMqDockerDaemonCertPath  = ""
+	DefaultRabbitMqDockerDaemonTLSVerify = "1"
+	DefaultRabbitMqHost                  = "127.0.0.1"
+	DefaultRabbitMqPort                  = 5672
+	DefaultRabbitMqUser                  = "guest"
+	DefaultRabbitMqPassword              = "guest"
 )
 
 type FakeRabbitMq struct {
@@ -55,6 +57,16 @@ func NewFakeRabbitMqFromEnv() *FakeRabbitMq {
 	dockerDaemonHost := os.Getenv("TEST_RABBITMQ_DOCKER_HOST")
 	if dockerDaemonHost == "" {
 		dockerDaemonHost = DefaultRabbitMqDockerDaemonHost
+	}
+
+	dockerDaemonCertPath := os.Getenv("TEST_RABBITMQ_DOCKER_CERT_PATH")
+	if dockerDaemonCertPath == "" {
+		dockerDaemonCertPath = DefaultRabbitMqDockerDaemonCertPath
+	}
+
+	dockerDaemonTLSVerify := os.Getenv("TEST_RABBITMQ_DOCKER_TLS_VERIFY")
+	if dockerDaemonTLSVerify == "" {
+		dockerDaemonTLSVerify = DefaultRabbitMqDockerDaemonTLSVerify
 	}
 
 	var portInt int
@@ -95,6 +107,8 @@ func NewFakeRabbitMqFromEnv() *FakeRabbitMq {
 		rabbitmqVersion,
 		dockerContainerName,
 		dockerDaemonHost,
+		dockerDaemonCertPath,
+		dockerDaemonTLSVerify,
 		host,
 		portInt,
 		user,
@@ -116,12 +130,18 @@ func NewFakeRabbitMq(
 	rabbitmqVersion,
 	dockerContainerName,
 	dockerDaemonHost,
+	dockerCertPath,
+	dockerTLSVerify,
 	host string,
 	port int,
 	user,
 	password string,
 ) *FakeRabbitMq {
-	dockerEnv := []string{fmt.Sprintf("DOCKER_HOST=%s", dockerDaemonHost)}
+	dockerEnv := []string{
+		fmt.Sprintf("DOCKER_HOST=%s", dockerDaemonHost),
+		fmt.Sprintf("DOCKER_CERT_PATH=%s", dockerCertPath),
+		fmt.Sprintf("DOCKER_TLS_VERIFY=%s", dockerTLSVerify),
+	}
 
 	return &FakeRabbitMq{
 		host:                host,

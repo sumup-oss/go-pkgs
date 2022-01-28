@@ -27,14 +27,16 @@ import (
 )
 
 const (
-	PostgresDockerImage             = "postgres"
-	DefaultPostgresVersion          = "10"
-	DefaultPostgresDockerDaemonHost = "unix:///var/run/docker.sock"
-	DefaultPostgresHost             = "127.0.0.1"
-	DefaultPostgresPort             = 5432
-	DefaultPostgresUser             = "postgres"
-	DefaultPostgresPassword         = "password"
-	DefaultPostgresDatabase         = "postgres"
+	PostgresDockerImage                  = "postgres"
+	DefaultPostgresVersion               = "10"
+	DefaultPostgresDockerDaemonHost      = "unix:///var/run/docker.sock"
+	DefaultPostgresDockerDaemonCertPath  = ""
+	DefaultPostgresDockerDaemonTLSVerify = "1"
+	DefaultPostgresHost                  = "127.0.0.1"
+	DefaultPostgresPort                  = 5432
+	DefaultPostgresUser                  = "postgres"
+	DefaultPostgresPassword              = "password"
+	DefaultPostgresDatabase              = "postgres"
 )
 
 type FakePostgresServer struct {
@@ -51,6 +53,8 @@ type FakePostgresServer struct {
 func NewFakePostgres10Server(
 	dockerContainerName,
 	dockerDaemonHost,
+	dockerDaemonCertPath,
+	dockerDeamonTLSVerify,
 	host string,
 	port int,
 	user,
@@ -61,6 +65,8 @@ func NewFakePostgres10Server(
 		DefaultPostgresVersion,
 		dockerContainerName,
 		dockerDaemonHost,
+		dockerDaemonCertPath,
+		dockerDeamonTLSVerify,
 		host,
 		port,
 		user,
@@ -93,6 +99,16 @@ func NewFakePostgres10ServerFromEnv() *FakePostgresServer {
 		dockerDaemonHost = DefaultPostgresDockerDaemonHost
 	}
 
+	dockerDaemonCertPath := os.Getenv("TEST_POSTGRES_DOCKER_CERT_PATH")
+	if dockerDaemonCertPath == "" {
+		dockerDaemonCertPath = DefaultPostgresDockerDaemonCertPath
+	}
+
+	dockerDaemonTLSVerify := os.Getenv("TEST_POSTGRES_DOCKER_TLS_VERIFY")
+	if dockerDaemonTLSVerify == "" {
+		dockerDaemonTLSVerify = DefaultPostgresDockerDaemonTLSVerify
+	}
+
 	dockerContainerName := os.Getenv("TEST_POSTGRES_DOCKER_CONTAINER_NAME")
 	if dockerContainerName == "" {
 		panic(`Blank "TEST_POSTGRES_DOCKER_CONTAINER_NAME"`)
@@ -116,6 +132,8 @@ func NewFakePostgres10ServerFromEnv() *FakePostgresServer {
 	return NewFakePostgres10Server(
 		dockerContainerName,
 		dockerDaemonHost,
+		dockerDaemonCertPath,
+		dockerDaemonTLSVerify,
 		host,
 		portInt,
 		user,
@@ -148,6 +166,16 @@ func NewFakePostgresServerFromEnv() *FakePostgresServer {
 		dockerDaemonHost = DefaultPostgresDockerDaemonHost
 	}
 
+	dockerDaemonCertPath := os.Getenv("TEST_POSTGRES_DOCKER_CERT_PATH")
+	if dockerDaemonCertPath == "" {
+		dockerDaemonCertPath = DefaultPostgresDockerDaemonCertPath
+	}
+
+	dockerDaemonTLSVerify := os.Getenv("TEST_POSTGRES_DOCKER_TLS_VERIFY")
+	if dockerDaemonTLSVerify == "" {
+		dockerDaemonTLSVerify = DefaultPostgresDockerDaemonTLSVerify
+	}
+
 	dockerContainerName := os.Getenv("TEST_POSTGRES_DOCKER_CONTAINER_NAME")
 	if dockerContainerName == "" {
 		panic(`Blank "TEST_POSTGRES_DOCKER_CONTAINER_NAME"`)
@@ -178,6 +206,8 @@ func NewFakePostgresServerFromEnv() *FakePostgresServer {
 		postgresVersion,
 		dockerContainerName,
 		dockerDaemonHost,
+		dockerDaemonCertPath,
+		dockerDaemonTLSVerify,
 		host,
 		portInt,
 		user,
@@ -190,13 +220,19 @@ func NewFakePostgresServer(
 	postgresVersion,
 	dockerContainerName,
 	dockerDaemonHost,
+	dockerCertPath,
+	dockerTLSVerify,
 	host string,
 	port int,
 	user,
 	password,
 	database string,
 ) *FakePostgresServer {
-	dockerEnv := []string{fmt.Sprintf("DOCKER_HOST=%s", dockerDaemonHost)}
+	dockerEnv := []string{
+		fmt.Sprintf("DOCKER_HOST=%s", dockerDaemonHost),
+		fmt.Sprintf("DOCKER_CERT_PATH=%s", dockerCertPath),
+		fmt.Sprintf("DOCKER_TLS_VERIFY=%s", dockerTLSVerify),
+	}
 
 	return &FakePostgresServer{
 		host:                host,

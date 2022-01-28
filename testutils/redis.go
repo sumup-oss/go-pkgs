@@ -27,11 +27,13 @@ import (
 )
 
 const (
-	RedisDockerImage             = "redis"
-	DefaultRedisVersion          = "5"
-	DefaultRedisDockerDaemonHost = "unix:///var/run/docker.sock"
-	DefaultRedisHost             = "127.0.0.1"
-	DefaultRedisPort             = 6379
+	RedisDockerImage                  = "redis"
+	DefaultRedisVersion               = "5"
+	DefaultRedisDockerDaemonHost      = "unix:///var/run/docker.sock"
+	DefaultRedisDockerDaemonCertPath  = ""
+	DefaultRedisDockerDaemonTLSVerify = "1"
+	DefaultRedisHost                  = "127.0.0.1"
+	DefaultRedisPort                  = 6379
 )
 
 type FakeRedisServer struct {
@@ -45,6 +47,8 @@ type FakeRedisServer struct {
 func NewFakeRedis5Server(
 	dockerContainerName,
 	dockerDaemonHost,
+	dockerDaemonCertPath,
+	dockerDaemonTLSVerify,
 	host string,
 	port int,
 ) *FakeRedisServer {
@@ -52,6 +56,8 @@ func NewFakeRedis5Server(
 		DefaultRedisVersion,
 		dockerContainerName,
 		dockerDaemonHost,
+		dockerDaemonCertPath,
+		dockerDaemonTLSVerify,
 		host,
 		port,
 	)
@@ -81,6 +87,16 @@ func NewFakeRedis5ServerFromEnv() *FakeRedisServer {
 		dockerDaemonHost = DefaultRedisDockerDaemonHost
 	}
 
+	dockerDaemonCertPath := os.Getenv("TEST_REDIS_DOCKER_CERT_PATH")
+	if dockerDaemonCertPath == "" {
+		dockerDaemonCertPath = DefaultRedisDockerDaemonCertPath
+	}
+
+	dockerDaemonTLSVerify := os.Getenv("TEST_REDIS_DOCKER_TLS_VERIFY")
+	if dockerDaemonTLSVerify == "" {
+		dockerDaemonTLSVerify = DefaultRedisDockerDaemonTLSVerify
+	}
+
 	dockerContainerName := os.Getenv("TEST_REDIS_DOCKER_CONTAINER_NAME")
 	if dockerContainerName == "" {
 		panic(`Blank "TEST_REDIS_DOCKER_CONTAINER_NAME"`)
@@ -89,6 +105,8 @@ func NewFakeRedis5ServerFromEnv() *FakeRedisServer {
 	return NewFakeRedis5Server(
 		dockerContainerName,
 		dockerDaemonHost,
+		dockerDaemonCertPath,
+		dockerDaemonTLSVerify,
 		host,
 		portInt,
 	)
@@ -118,6 +136,16 @@ func NewFakeRedisServerFromEnv() *FakeRedisServer {
 		dockerDaemonHost = DefaultRedisDockerDaemonHost
 	}
 
+	dockerDaemonCertPath := os.Getenv("TEST_REDIS_DOCKER_CERT_PATH")
+	if dockerDaemonCertPath == "" {
+		dockerDaemonCertPath = DefaultRedisDockerDaemonCertPath
+	}
+
+	dockerDaemonTLSVerify := os.Getenv("TEST_REDIS_DOCKER_TLS_VERIFY")
+	if dockerDaemonTLSVerify == "" {
+		dockerDaemonTLSVerify = DefaultRedisDockerDaemonTLSVerify
+	}
+
 	dockerContainerName := os.Getenv("TEST_REDIS_DOCKER_CONTAINER_NAME")
 	if dockerContainerName == "" {
 		panic(`Blank "TEST_REDIS_DOCKER_CONTAINER_NAME"`)
@@ -132,6 +160,8 @@ func NewFakeRedisServerFromEnv() *FakeRedisServer {
 		version,
 		dockerContainerName,
 		dockerDaemonHost,
+		dockerDaemonCertPath,
+		dockerDaemonTLSVerify,
 		host,
 		portInt,
 	)
@@ -141,10 +171,16 @@ func NewFakeRedisServer(
 	version,
 	dockerContainerName,
 	dockerDaemonHost,
+	dockerCertPath,
+	dockerTLSVerify,
 	host string,
 	port int,
 ) *FakeRedisServer {
-	dockerEnv := []string{fmt.Sprintf("DOCKER_HOST=%s", dockerDaemonHost)}
+	dockerEnv := []string{
+		fmt.Sprintf("DOCKER_HOST=%s", dockerDaemonHost),
+		fmt.Sprintf("DOCKER_CERT_PATH=%s", dockerCertPath),
+		fmt.Sprintf("DOCKER_TLS_VERIFY=%s", dockerTLSVerify),
+	}
 
 	return &FakeRedisServer{
 		Host:                host,
