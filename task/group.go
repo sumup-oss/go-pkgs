@@ -72,6 +72,9 @@ func (g *Group) Go(tasks ...TaskFunc) {
 // Returns the first encountered error if any.
 // If the context is done all tasks are canceled and the context error is returned.
 func (g *Group) Wait(ctx context.Context) error {
+	doneCh := make(chan struct{})
+	defer close(doneCh)
+
 	if ctx != context.TODO() {
 		go func() {
 			select {
@@ -79,6 +82,8 @@ func (g *Group) Wait(ctx context.Context) error {
 				return
 			case <-ctx.Done():
 				g.cancelWithError(ctx.Err())
+			case <-doneCh:
+				return
 			}
 		}()
 	}
