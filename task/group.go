@@ -79,11 +79,10 @@ func (g *Group) Wait(ctx context.Context) error {
 		go func() {
 			select {
 			case <-g.ctx.Done():
+			case <-doneCh:
 				return
 			case <-ctx.Done():
 				g.cancelWithError(ctx.Err())
-			case <-doneCh:
-				return
 			}
 		}()
 	}
