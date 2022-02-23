@@ -73,10 +73,13 @@ func (g *Group) Go(tasks ...TaskFunc) {
 // If the context is done all tasks are canceled and the context error is returned.
 func (g *Group) Wait(ctx context.Context) error {
 	if ctx != context.TODO() {
+		doneCh := make(chan struct{})
+		defer close(doneCh)
+
 		go func() {
 			select {
 			case <-g.ctx.Done():
-				return
+			case <-doneCh:
 			case <-ctx.Done():
 				g.cancelWithError(ctx.Err())
 			}
