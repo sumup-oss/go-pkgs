@@ -3,7 +3,7 @@
 ## Prerequisites
 
 * **Signed and verified CLA**
-* Golang 1.12.x
+* Golang 1.13.x
 * (To run linter) https://github.com/golangci/golangci-lint in `$PATH`
 
 ## Common commands

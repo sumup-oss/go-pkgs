@@ -35,6 +35,7 @@ var ioutilTempFile = ioutil.TempFile
 var ioutilWriteFile = ioutil.WriteFile
 var osArgs = os.Args
 var osChdir = os.Chdir
+var osUserHomeDir = os.UserHomeDir
 var osChmod = os.Chmod
 var osCreate = os.Create
 var osExit = os.Exit

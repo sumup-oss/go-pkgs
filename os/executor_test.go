@@ -55,6 +55,30 @@ func TestRealOsExecutor_Chdir(t *testing.T) {
 	})
 }
 
+func TestRealOsExecutor_UserHomeDir(t *testing.T) {
+	t.Run("it uses builtin `osUserHomeDir`", func(t *testing.T) {
+		called := false
+		calledDirArgument := "/Users/user1"
+		var calledErr error
+
+		osUserHomeDir = func() (string, error) {
+			called = true
+			return calledDirArgument, calledErr
+		}
+		defer func() {
+			osUserHomeDir = os.UserHomeDir
+		}()
+
+		osExecutor := &RealOsExecutor{}
+
+		dir, err := osExecutor.UserHomeDir()
+		require.NoError(t, err)
+
+		assert.True(t, called)
+		assert.Equal(t, calledDirArgument, dir)
+	})
+}
+
 func TestRealOsExecutor_Getwd(t *testing.T) {
 	t.Run("it uses builtin `osGetwd`", func(t *testing.T) {
 		called := false
