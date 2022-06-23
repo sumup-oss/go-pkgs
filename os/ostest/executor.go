@@ -48,6 +48,12 @@ func (f *FakeOsExecutor) Getwd() (string, error) {
 	return args.String(0), args.Error(1)
 }
 
+func (f *FakeOsExecutor) UserHomeDir() (string, error) {
+	args := f.Called()
+
+	return args.String(0), args.Error(1)
+}
+
 func (f *FakeOsExecutor) Chdir(dir string) error {
 	args := f.Called(dir)
 

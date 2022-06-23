@@ -46,6 +46,10 @@ func (ex *RealOsExecutor) Chdir(dir string) error {
 	return osChdir(dir)
 }
 
+func (ex *RealOsExecutor) UserHomeDir() (string, error) {
+	return osUserHomeDir()
+}
+
 func (ex *RealOsExecutor) Getwd() (string, error) {
 	return osGetwd()
 }

@@ -39,6 +39,7 @@ type (
 		Setenv(key, value string) error
 		GetOS() string
 		Getwd() (string, error)
+		UserHomeDir() (string, error)
 		IsDir(path string) error
 		IsExist(err error) bool
 		IsFile(path string) error
