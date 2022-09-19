@@ -169,3 +169,16 @@ func TestGroup_Cancel(t *testing.T) {
 		assert.Equal(t, 1, bar.StopCount)
 	})
 }
+
+func BenchmarkGroup_Go(b *testing.B) {
+	group := task.NewGroup()
+
+	b.ResetTimer()
+	b.ReportAllocs()
+
+	for i := 0; i < b.N; i++ {
+		group.Go(func(ctx context.Context) error { return nil })
+	}
+
+	group.Wait(context.TODO())
+}
