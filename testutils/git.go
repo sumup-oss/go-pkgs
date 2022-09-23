@@ -43,6 +43,8 @@ const (
 	DefaultExposedGitPort             = 2222
 	DefaultExposedGitBindHost         = "127.0.0.1"
 	DefaultGitDockerDaemonHost        = "unix:///var/run/docker.sock"
+	DefaultGitDockerDaemonCertPath    = ""
+	DefaultGitDockerDaemonTLSVerify   = "1"
 )
 
 type FakeGitServer struct {
@@ -57,8 +59,14 @@ func NewFakeGitServer(
 	port int,
 	dockerContainerName string,
 	dockerDaemonHost string,
+	dockerCertPath string,
+	dockerTLSVerify string,
 ) *FakeGitServer {
-	dockerEnv := []string{fmt.Sprintf("DOCKER_HOST=%s", dockerDaemonHost)}
+	dockerEnv := []string{
+		fmt.Sprintf("DOCKER_HOST=%s", dockerDaemonHost),
+		fmt.Sprintf("DOCKER_CERT_PATH=%s", dockerCertPath),
+		fmt.Sprintf("DOCKER_TLS_VERIFY=%s", dockerTLSVerify),
+	}
 
 	return &FakeGitServer{
 		Host:                host,
@@ -92,12 +100,22 @@ func NewFakeGitServerFromEnv() *FakeGitServer {
 		dockerDaemonHost = DefaultGitDockerDaemonHost
 	}
 
+	dockerDaemonCertPath := os.Getenv("TEST_GIT_DOCKER_CERT_PATH")
+	if dockerDaemonCertPath == "" {
+		dockerDaemonCertPath = DefaultGitDockerDaemonCertPath
+	}
+
+	dockerDaemonTLSVerify := os.Getenv("TEST_GIT_DOCKER_TLS_VERIFY")
+	if dockerDaemonTLSVerify == "" {
+		dockerDaemonTLSVerify = DefaultGitDockerDaemonTLSVerify
+	}
+
 	dockerContainerName := os.Getenv("TEST_GIT_DOCKER_CONTAINER_NAME")
 	if dockerContainerName == "" {
 		dockerContainerName = DefaultFakeGitServerContainerName
 	}
 
-	return NewFakeGitServer(gitHost, gitPortInt, dockerContainerName, dockerDaemonHost)
+	return NewFakeGitServer(gitHost, gitPortInt, dockerContainerName, dockerDaemonHost, dockerDaemonCertPath, dockerDaemonTLSVerify)
 }
 
 func DefaultGitServer() *FakeGitServer {
@@ -106,6 +124,8 @@ func DefaultGitServer() *FakeGitServer {
 		DefaultExposedGitPort,
 		DefaultFakeGitServerContainerName,
 		DefaultGitDockerDaemonHost,
+		DefaultGitDockerDaemonCertPath,
+		DefaultGitDockerDaemonTLSVerify,
 	)
 }
 
