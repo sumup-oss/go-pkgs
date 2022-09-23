@@ -17,6 +17,8 @@ package task
 import (
 	"context"
 	"sync"
+	"sync/atomic"
+	"unsafe"
 )
 
 // Group is used to wait for a group of tasks to finish.
@@ -24,13 +26,10 @@ import (
 // It will stop all the tasks on the first task failure, and the Wait() method will return only the
 // first encountered error.
 type Group struct {
-	wg         sync.WaitGroup
-	ctx        context.Context
-	cancelFunc context.CancelFunc
-
-	// mu protects the firstRunErr
-	mu          sync.Mutex
-	firstRunErr error
+	wg             sync.WaitGroup
+	ctx            context.Context
+	cancelFunc     context.CancelFunc
+	firstRunErrPtr unsafe.Pointer
 }
 
 // NewGroup creates new task group instance.
@@ -88,20 +87,20 @@ func (g *Group) Wait(ctx context.Context) error {
 
 	g.wg.Wait()
 
-	return g.firstRunErr
+	err := (*error)(atomic.LoadPointer(&g.firstRunErrPtr))
+	if err != nil {
+		return *err
+	}
+
+	return nil
 }
 
 func (g *Group) cancelWithError(err error) {
-	g.mu.Lock()
+	swapped := atomic.CompareAndSwapPointer(&g.firstRunErrPtr, nil, (unsafe.Pointer)(&err))
 
-	// NOTE: only the first error is retained.
-	if g.firstRunErr == nil {
-		g.firstRunErr = err
+	if swapped {
+		g.cancelFunc()
 	}
-
-	g.mu.Unlock()
-
-	g.cancelFunc()
 }
 
 // Cancel cancels all the tasks.
