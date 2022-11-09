@@ -445,9 +445,6 @@ func (ex *RealOsExecutor) AppendToFile(path string, data []byte, perm os.FileMod
 	defer file.Close()
 
 	_, err = file.Write(data)
-	if err != nil {
-		return stacktrace.Propagate(err, "failed to write file: %s", path)
-	}
 
-	return nil
+	return stacktrace.Propagate(err, "failed to write file: %s", path)
 }
