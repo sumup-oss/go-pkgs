@@ -292,3 +292,44 @@ func TestRealOsExecutor_RemoveContents(t *testing.T) {
 		},
 	)
 }
+
+func TestRealOsExecutor_AppendToFile(t *testing.T) {
+	t.Run(
+		"when file does not exist, file is created",
+		func(t *testing.T) {
+			osExecutor := &pkgos.RealOsExecutor{}
+
+			dstArg, err := osExecutor.TempDir("", "")
+			require.Nil(t, err, "failed to create temporary dir")
+
+			pathArg := filepath.Join(dstArg, "example.txt")
+
+			err = osExecutor.AppendToFile(pathArg, []byte(""), 0755)
+			require.Nil(t, err)
+
+			_, err = osExecutor.Stat(pathArg)
+			require.Nil(t, err)
+		},
+	)
+
+	t.Run(
+		"when file exists, new content is appended",
+		func(t *testing.T) {
+			osExecutor := &pkgos.RealOsExecutor{}
+
+			dstArg, err := osExecutor.TempDir("", "")
+			require.Nil(t, err, "failed to create temporary dir")
+
+			pathArg := filepath.Join(dstArg, "example.txt")
+
+			err = osExecutor.AppendToFile(pathArg, []byte("old"), 0755)
+			require.Nil(t, err)
+			err = osExecutor.AppendToFile(pathArg, []byte("new"), 0755)
+			require.Nil(t, err)
+
+			fileContent, err := osExecutor.ReadFile(pathArg)
+			require.Nil(t, err)
+			assert.Equal(t, "oldnew", string(fileContent))
+		},
+	)
+}

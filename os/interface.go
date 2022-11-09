@@ -23,6 +23,7 @@ import (
 
 type (
 	OsExecutor interface {
+		AppendToFile(path string, data []byte, perm os.FileMode) error
 		Args() []string
 		Chdir(dir string) error
 		Chmod(name string, mode os.FileMode) error
