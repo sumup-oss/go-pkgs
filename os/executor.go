@@ -435,3 +435,16 @@ func (ex *RealOsExecutor) IsExist(err error) bool {
 func (ex *RealOsExecutor) Rename(oldPath, newPath string) error {
 	return osRename(oldPath, newPath)
 }
+
+func (ex *RealOsExecutor) AppendToFile(path string, data []byte, perm os.FileMode) error {
+	file, err := ex.OpenFile(path, os.O_APPEND|os.O_CREATE|os.O_WRONLY, perm)
+	if err != nil {
+		return stacktrace.Propagate(err, "failed to open file: %s", path)
+	}
+
+	defer file.Close()
+
+	_, err = file.Write(data)
+
+	return stacktrace.Propagate(err, "failed to write file: %s", path)
+}

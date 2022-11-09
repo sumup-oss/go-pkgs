@@ -429,3 +429,9 @@ func (f *FakeOsExecutor) Rename(oldPath, newPath string) error {
 
 	return args.Error(0)
 }
+
+func (f *FakeOsExecutor) AppendToFile(path string, data []byte, perm stdOs.FileMode) error {
+	args := f.Called(path, data, perm)
+
+	return args.Error(0)
+}
