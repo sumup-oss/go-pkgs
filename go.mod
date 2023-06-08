@@ -18,8 +18,7 @@ require (
 	github.com/stretchr/testify v1.7.0
 	github.com/sumup-oss/go-pkgs/errors v0.0.0-20210806131309-dd59fc2fd123
 	go.uber.org/zap v1.19.0
-	golang.org/x/crypto v0.0.0-20190510104115-cbcb75029529
-	golang.org/x/sys v0.0.0-20200122134326-e047566fdf82 // indirect
+	golang.org/x/crypto v0.1.0
 	gopkg.in/check.v1 v1.0.0-20190902080502-41f04d3bba15 // indirect
 )
 
