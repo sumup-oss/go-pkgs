@@ -90,7 +90,10 @@ func (c *Consumer) Run(ctx context.Context) error {
 			c.logger.Info("Received context cancel. Going to close RMQ connections.")
 			err = channel.Cancel(c.handler.GetConsumerTag(), false)
 			if err != nil {
-				c.logger.Warn("failed to cancel the RMQ channel while stopping handler", logger.ErrorField(err))
+				c.logger.Warn(
+					"failed to cancel the RMQ channel while stopping handler",
+					logger.ErrorField(err),
+				)
 			}
 
 			// NOTE: We must process the events before we close the channel
@@ -112,7 +115,11 @@ func (c *Consumer) Run(ctx context.Context) error {
 
 	err = channel.Qos(c.cfg.PrefetchCount, 0, false)
 	if err != nil {
-		return stacktrace.Propagate(err, "failed to set RMQ channel's QoS prefetch count to: %d", c.cfg.PrefetchCount)
+		return stacktrace.Propagate(
+			err,
+			"failed to set RMQ channel's QoS prefetch count to: %d",
+			c.cfg.PrefetchCount,
+		)
 	}
 
 	deliveries, err := channel.Consume(
@@ -164,10 +171,13 @@ func (c *Consumer) handleDeliveries(
 func (c *Consumer) handleSingleDelivery(ctx context.Context, d *amqp.Delivery) error {
 	c.metric.ObserveMsgDelivered()
 
-	acknowledgement, err := c.handler.ReceiveMessage(ctx, &Message{
-		Body:          d.Body,
-		CorrelationID: d.CorrelationId,
-	})
+	acknowledgement, err := c.handler.ReceiveMessage(
+		ctx, &Message{
+			Body:          d.Body,
+			CorrelationID: d.CorrelationId,
+			Headers:       d.Headers,
+		},
+	)
 	if err != nil {
 		return stacktrace.Propagate(err, "handler returned error")
 	}

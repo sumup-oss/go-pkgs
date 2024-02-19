@@ -50,4 +50,6 @@ type Message struct {
 
 	// Correlation identifier
 	CorrelationID string
+	// Message headers
+	Headers map[string]interface{}
 }
