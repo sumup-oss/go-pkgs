@@ -17,10 +17,11 @@ package executor
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
 	"path"
 	"path/filepath"
 	"strings"
+
+	stdOs "os"
 
 	"github.com/sumup-oss/go-pkgs/os"
 )
@@ -378,7 +379,7 @@ func (git *Git) SetSparseCheckoutPaths(paths []string) error {
 	sparsePaths := strings.Join(paths, "\n")
 	sparseConfigPath := filepath.Join(git.dir, ".git", "info", "sparse-checkout")
 
-	err := ioutil.WriteFile(sparseConfigPath, []byte(sparsePaths), 0755) // nolint: gosec
+	err := stdOs.WriteFile(sparseConfigPath, []byte(sparsePaths), 0755) //nolint: gosec,mnd
 	if err != nil {
 		return fmt.Errorf("error writing to sparse checkout config file. Error: %s", err.Error())
 	}

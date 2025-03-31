@@ -101,7 +101,7 @@ func (docker *Docker) buildArgs(options *DockerBuildOptions) []string {
 
 	if options.BuildArgs != nil {
 		for _, buildArg := range options.BuildArgs {
-			args = append(args, fmt.Sprintf("--build-arg=%s", buildArg))
+			args = append(args, "--build-arg="+buildArg)
 		}
 	}
 
@@ -202,7 +202,7 @@ func (docker *Docker) NetworkGateway(ctx context.Context, name string) (string, 
 			"",
 		)
 		if err != nil {
-			return gatewayIP, nil // nolint: nilerr
+			return gatewayIP, nil //nolint: nilerr
 		}
 
 		matches := linuxIPRouteRegex.FindAllStringSubmatch(string(stdout), -1)
@@ -210,7 +210,7 @@ func (docker *Docker) NetworkGateway(ctx context.Context, name string) (string, 
 			return gatewayIP, nil
 		}
 
-		if len(matches[0]) < 2 {
+		if len(matches[0]) < 2 { //nolint:mnd
 			return gatewayIP, nil
 		}
 
@@ -224,7 +224,7 @@ func (docker *Docker) NetworkGateway(ctx context.Context, name string) (string, 
 			"",
 		)
 		if err != nil {
-			return gatewayIP, nil // nolint: nilerr
+			return gatewayIP, nil //nolint: nilerr
 		}
 
 		matches := darwinIPRouteRegex.FindAllStringSubmatch(string(stdout), -1)
@@ -232,7 +232,7 @@ func (docker *Docker) NetworkGateway(ctx context.Context, name string) (string, 
 			return gatewayIP, nil
 		}
 
-		if len(matches[0]) < 2 {
+		if len(matches[0]) < 2 { //nolint:mnd
 			return gatewayIP, nil
 		}
 

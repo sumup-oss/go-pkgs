@@ -15,47 +15,48 @@
 package os
 
 import (
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"os/user"
 )
 
-// NOTE: Define standard library `os`, `exec` and `ioutil`
+// NOTE: Define standard library `os` and `exec`.
 // builtin functions so that they can be mocked during test of `RealOsExecutor`.
 // It's expected that the actual functionality is not tested, but only that they're invoked correctly.
 // Testing the golang standard library seems redundant at this point.
 
-var execCommand = exec.Command
-var execCommandContext = exec.CommandContext
-var ioutilReadDir = ioutil.ReadDir
-var ioutilReadFile = ioutil.ReadFile
-var ioutilTempDir = ioutil.TempDir
-var ioutilTempFile = ioutil.TempFile
-var ioutilWriteFile = ioutil.WriteFile
-var osArgs = os.Args
-var osChdir = os.Chdir
-var osUserHomeDir = os.UserHomeDir
-var osChmod = os.Chmod
-var osCreate = os.Create
-var osExit = os.Exit
-var osGetenv = os.Getenv
-var osSetenv = os.Setenv
-var osGetwd = os.Getwd
-var osIsExist = os.IsExist
-var osIsNotExist = os.IsNotExist
-var osLstat = os.Lstat
-var osMkdir = os.Mkdir
-var osMkdirAll = os.MkdirAll
-var osOpen = os.Open
-var osOpenfile = os.OpenFile
-var osReadlink = os.Readlink
-var osRemove = os.Remove
-var osRemoveAll = os.RemoveAll
-var osRename = os.Rename
-var osStat = os.Stat
-var osStderr = os.Stderr
-var osStdin = os.Stdin
-var osStdout = os.Stdout
-var osSymlink = os.Symlink
-var userCurrent = user.Current
+var (
+	execCommand        = exec.Command
+	execCommandContext = exec.CommandContext
+	osReadDir          = os.ReadDir
+	osReadFile         = os.ReadFile
+	osTempDir          = os.MkdirTemp
+	osCreateTemp       = os.CreateTemp
+	osWriteFile        = os.WriteFile
+	osArgs             = os.Args
+	osChdir            = os.Chdir
+	osUserHomeDir      = os.UserHomeDir
+	osChmod            = os.Chmod
+	osCreate           = os.Create
+	osExit             = os.Exit
+	osGetenv           = os.Getenv
+	osSetenv           = os.Setenv
+	osGetwd            = os.Getwd
+	osIsExist          = os.IsExist
+	osIsNotExist       = os.IsNotExist
+	osLstat            = os.Lstat
+	osMkdir            = os.Mkdir
+	osMkdirAll         = os.MkdirAll
+	osOpen             = os.Open
+	osOpenfile         = os.OpenFile
+	osReadlink         = os.Readlink
+	osRemove           = os.Remove
+	osRemoveAll        = os.RemoveAll
+	osRename           = os.Rename
+	osStat             = os.Stat
+	osStderr           = os.Stderr
+	osStdin            = os.Stdin
+	osStdout           = os.Stdout
+	osSymlink          = os.Symlink
+	userCurrent        = user.Current
+)

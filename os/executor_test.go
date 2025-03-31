@@ -18,7 +18,6 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"os/user"
@@ -319,14 +318,14 @@ func TestRealOsExecutor_OpenFile(t *testing.T) {
 }
 
 func TestRealOsExecutor_WriteFile(t *testing.T) {
-	t.Run("it uses builtin `ioutilWriteFile`", func(t *testing.T) {
+	t.Run("it uses builtin `osWriteFile`", func(t *testing.T) {
 		called := false
 		var calledPath string
 		var calledData []byte
 		var calledPerm os.FileMode
 		var calledReturnErr error
 
-		ioutilWriteFile = func(path string, data []byte, perm os.FileMode) error {
+		osWriteFile = func(path string, data []byte, perm os.FileMode) error {
 			called = true
 			calledPath = path
 			calledData = data
@@ -334,7 +333,7 @@ func TestRealOsExecutor_WriteFile(t *testing.T) {
 			return calledReturnErr
 		}
 		defer func() {
-			ioutilWriteFile = ioutil.WriteFile
+			osWriteFile = os.WriteFile
 		}()
 
 		osExecutor := &RealOsExecutor{}
@@ -528,20 +527,20 @@ func TestRealOsExecutor_Create(t *testing.T) {
 
 func TestRealOsExecutor_ReadFile(t *testing.T) {
 	t.Run(
-		"it uses builtin 'ioutilReadFile'",
+		"it uses builtin 'osReadFile'",
 		func(t *testing.T) {
 			called := false
 			var calledFilenameArg string
 			calledBytes := []byte("test")
 			calledReturnError := errors.New("fake")
 
-			ioutilReadFile = func(filename string) (bytes []byte, e error) {
+			osReadFile = func(filename string) (bytes []byte, e error) {
 				called = true
 				calledFilenameArg = filename
 				return calledBytes, calledReturnError
 			}
 			defer func() {
-				ioutilReadFile = ioutil.ReadFile
+				osReadFile = os.ReadFile
 			}()
 
 			filenameArg := "example"
@@ -802,21 +801,21 @@ func TestRealOsExecutor_RemoveAll(t *testing.T) {
 }
 
 func TestRealOsExecutor_TempDir(t *testing.T) {
-	t.Run("it uses builtin `ioutilTempDir`", func(t *testing.T) {
+	t.Run("it uses builtin `osTempDir`", func(t *testing.T) {
 		called := false
 		var calledDir string
 		var calledPrefix string
 		var fakeString string
 		var fakeErr error
 
-		ioutilTempDir = func(dir, prefix string) (string, error) {
+		osTempDir = func(dir, prefix string) (string, error) {
 			called = true
 			calledDir = dir
 			calledPrefix = prefix
 			return fakeString, fakeErr
 		}
 		defer func() {
-			ioutilTempDir = ioutil.TempDir
+			osTempDir = os.MkdirTemp
 		}()
 
 		osExecutor := &RealOsExecutor{}
@@ -836,21 +835,21 @@ func TestRealOsExecutor_TempDir(t *testing.T) {
 }
 
 func TestRealOsExecutor_TempFile(t *testing.T) {
-	t.Run("it uses builtin `ioutilTempFile`", func(t *testing.T) {
+	t.Run("it uses builtin `osTempFile`", func(t *testing.T) {
 		called := false
 		var calledDir string
 		var calledPattern string
 		var fakeFile *os.File
 		var fakeErr error
 
-		ioutilTempFile = func(dir, pattern string) (*os.File, error) {
+		osCreateTemp = func(dir, pattern string) (*os.File, error) {
 			called = true
 			calledDir = dir
 			calledPattern = pattern
 			return fakeFile, fakeErr
 		}
 		defer func() {
-			ioutilTempFile = ioutil.TempFile
+			osCreateTemp = os.CreateTemp
 		}()
 
 		osExecutor := &RealOsExecutor{}
@@ -870,19 +869,19 @@ func TestRealOsExecutor_TempFile(t *testing.T) {
 }
 
 func TestRealOsExecutor_ReadDir(t *testing.T) {
-	t.Run("it uses builtin `ioutilReadDir`", func(t *testing.T) {
+	t.Run("it uses builtin `osReadDir`", func(t *testing.T) {
 		called := false
 		var calledDirname string
-		var fakeInfos []os.FileInfo
+		var fakeDirEntries []os.DirEntry
 		var fakeErr error
 
-		ioutilReadDir = func(dirname string) ([]os.FileInfo, error) {
+		osReadDir = func(dirname string) ([]os.DirEntry, error) {
 			called = true
 			calledDirname = dirname
-			return fakeInfos, fakeErr
+			return fakeDirEntries, fakeErr
 		}
 		defer func() {
-			ioutilReadDir = ioutil.ReadDir
+			osReadDir = os.ReadDir
 		}()
 
 		osExecutor := &RealOsExecutor{}
@@ -894,7 +893,7 @@ func TestRealOsExecutor_ReadDir(t *testing.T) {
 
 		assert.Equal(t, calledDirname, dirnameArg)
 
-		assert.Equal(t, fakeInfos, actualReturn)
+		assert.Equal(t, fakeDirEntries, actualReturn)
 		assert.Equal(t, fakeErr, actualErr)
 	})
 }

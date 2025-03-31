@@ -16,9 +16,10 @@ package vault
 
 import (
 	stdRsa "crypto/rsa"
-	"fmt"
 	"io"
+	"net/http"
 	"path"
+	"strconv"
 	"strings"
 
 	"github.com/palantir/stacktrace"
@@ -132,7 +133,7 @@ func (c *Client) Read(path string) (*api.Secret, error) {
 	if v2 {
 		path = c.addPrefixToVKVPath(path, mountPath, "data")
 		versionParam = map[string]string{
-			"version": fmt.Sprintf("%d", latestVersion),
+			"version": strconv.Itoa(latestVersion),
 		}
 	}
 
@@ -186,7 +187,7 @@ func (c *Client) kvPreflightVersionRequest(path string) (string, int, error) {
 		// NOTE: If we get a 404 we are using an older version of vault,
 		// default to version 1.
 		// Hopefully v1 will be removed before v2 happens, otherwise this default is problematic.
-		if resp != nil && (resp.StatusCode == 403 || resp.StatusCode == 404) {
+		if resp != nil && (resp.StatusCode == http.StatusForbidden || resp.StatusCode == http.StatusNotFound) {
 			return "", 1, nil
 		}
 
@@ -203,22 +204,22 @@ func (c *Client) kvPreflightVersionRequest(path string) (string, int, error) {
 	}
 	var mountPath string
 	if mountPathRaw, ok := secret.Data["path"]; ok {
-		mountPath = mountPathRaw.(string) // nolint: forcetypeassert
+		mountPath = mountPathRaw.(string) //nolint:forcetypeassert
 	}
 	options := secret.Data["options"]
 	if options == nil {
 		return mountPath, 1, nil
 	}
-	versionRaw := options.(map[string]interface{})["version"]
+	versionRaw := options.(map[string]interface{})["version"] //nolint:forcetypeassert
 	if versionRaw == nil {
 		return mountPath, 1, nil
 	}
-	version := versionRaw.(string) // nolint: forcetypeassert
+	version := versionRaw.(string) //nolint:forcetypeassert
 	switch version {
 	case "", "1":
 		return mountPath, 1, nil
 	case "2":
-		return mountPath, 2, nil
+		return mountPath, 2, nil //nolint:mnd
 	}
 
 	return mountPath, 1, nil
@@ -235,7 +236,7 @@ func (c *Client) isKVv2(path string) (string, bool, error) {
 		)
 	}
 
-	return mountPath, version == 2, nil
+	return mountPath, version == 2, nil //nolint:mnd
 }
 
 // addPrefixToVKVPath adds specified `apiPrefix` to returned path.
@@ -261,12 +262,12 @@ func (c *Client) kvReadRequest(path string, params map[string]string) (*api.Secr
 	if resp != nil {
 		defer resp.Body.Close()
 	}
-	if resp != nil && (resp.StatusCode == 403 || resp.StatusCode == 404) {
+	if resp != nil && (resp.StatusCode == http.StatusForbidden || resp.StatusCode == http.StatusNotFound) {
 		secret, parseErr := api.ParseSecret(resp.Body)
 		switch parseErr {
 		case nil:
 		case io.EOF:
-			return nil, nil
+			return nil, nil //nolint:nilnil
 		default:
 			// NOTE: Don't log `params` since they may contain sensitive data.
 			return nil, stacktrace.Propagate(

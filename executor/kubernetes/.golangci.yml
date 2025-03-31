@@ -30,13 +30,16 @@ linters-settings:
     min-len: 2
     min-occurrences: 2
   depguard:
-    list-type: blacklist
-    packages:
-      # logging is allowed only by logutils.Log, logrus
-      # is allowed to use only in logutils package
-      - github.com/sirupsen/logrus
-      # NOTE: Be very, very wary not to use GPL3 software as library
-      - github.com/golangci/golangci-lint
+    rules:
+      main:
+        deny:
+          # logging is allowed only by logutils.Log, logrus
+          # is allowed to use only in logutils package
+          - pkg: "github.com/sirupsen/logrus"
+            desc: "use the github.com/sumup-oss/logger package instead"
+            # NOTE: Be very, very wary not to use GPL3 software as library
+          - pkg: "github.com/golangci/golangci-lint"
+
   misspell:
     locale: US
   lll:
@@ -50,15 +53,6 @@ linters-settings:
 linters:
   enable-all: true
   disable:
-    # 'scopelint' is deprecated (since v1.39.0) due to:
-    # The repository of the linter has been deprecated by the owner.  Replaced by exportloopref.
-    - scopelint
-    # 'maligned' is deprecated (since v1.38.0) due to:
-    # The repository of the linter has been archived by the owner.  Replaced by govet 'fieldalignment'. 
-    - maligned
-    # 'interfacer' is deprecated (since v1.38.0) due to:
-    # The repository of the linter has been archived by the owner.
-    - interfacer
     # "effective" golang style is full of arguable practices.
     # We don't need that and besides gofmt does the required minimum of style modifications.
     - golint
@@ -66,19 +60,12 @@ linters:
     - unparam
     # It's a great linter, but gets in the way too often by not being customizable.
     - gochecknoglobals
-    # It considers too much things as magic numbers.
-    - gomnd
     # False positives.
     - wsl
     # Pointless.
     - funlen
     # `TODO` comments are not offences.
     - godox
-    # It is sometimes beneficial to create structs with default zero values,
-    # without writing all those zero values.
-    - exhaustivestruct
-    # Short ifs are ugly.
-    - ifshort
     # Things like cyclomatic complexity will be left to the developer's critical thinking.
     - cyclop
     - nestif
@@ -88,7 +75,7 @@ linters:
     # We just don't like revive.
     - revive
     # It's good, but the code is not yet migrated.
-    - goerr113
+    - err113
     # We use stacktrace, which is incompatible with standard errors wrapping.
     - wrapcheck
     # We use stacktrace, which is incompatible with standard errors wrapping.

@@ -117,7 +117,7 @@ func NewFakeRabbitMqFromEnv() *FakeRabbitMq {
 }
 
 func (s *FakeRabbitMq) GetConnectionString() string {
-	return fmt.Sprintf(
+	return fmt.Sprintf( //nolint:nosprintfhostport
 		"amqp://%s:%s@%s:%d/",
 		s.user,
 		s.password,
@@ -138,9 +138,9 @@ func NewFakeRabbitMq(
 	password string,
 ) *FakeRabbitMq {
 	dockerEnv := []string{
-		fmt.Sprintf("DOCKER_HOST=%s", dockerDaemonHost),
-		fmt.Sprintf("DOCKER_CERT_PATH=%s", dockerCertPath),
-		fmt.Sprintf("DOCKER_TLS_VERIFY=%s", dockerTLSVerify),
+		"DOCKER_HOST=" + dockerDaemonHost,
+		"DOCKER_CERT_PATH=" + dockerCertPath,
+		"DOCKER_TLS_VERIFY=" + dockerTLSVerify,
 	}
 
 	return &FakeRabbitMq{
@@ -161,11 +161,11 @@ func (s *FakeRabbitMq) RunWithArgs() error {
 	cmd := exec.Command("docker", "run",
 		"-p",
 		fmt.Sprintf("%s:%d:5672/tcp", s.host, s.port),
-		fmt.Sprintf("--name=%s", s.dockerContainerName),
+		"--name="+s.dockerContainerName,
 		"-e",
-		fmt.Sprintf("RABBITMQ_DEFAULT_USER=%s", s.user),
+		"RABBITMQ_DEFAULT_USER="+s.user,
 		"-e",
-		fmt.Sprintf("RABBITMQ_DEFAULT_PASS=%s", s.password),
+		"RABBITMQ_DEFAULT_PASS="+s.password,
 		"-d",
 		"--rm",
 		"-ti",
@@ -185,7 +185,7 @@ func (s *FakeRabbitMq) RunWithArgs() error {
 	isHealthy := false
 	log.Println("Waiting for RabbitMq to be healthy")
 
-	for i := 0; i < 15; i++ {
+	for range 15 {
 		if s.IsHealthy() {
 			isHealthy = true
 
@@ -205,7 +205,7 @@ func (s *FakeRabbitMq) RunWithArgs() error {
 
 func (s *FakeRabbitMq) Stop() error {
 	// NOTE: Ignore error since we clean optimistically
-	// nolint:gosec
+	//nolint:gosec
 	cmd := exec.Command("docker", "rm", "-fv", s.dockerContainerName)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr

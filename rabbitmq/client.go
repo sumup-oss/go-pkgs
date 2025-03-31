@@ -55,7 +55,7 @@ type RabbitMQClient struct {
 	cfg                   *ClientConfig
 }
 
-func NewRabbitMQClient(ctx context.Context, cfg *ClientConfig) (RabbitMQClientInterface, error) {
+func NewRabbitMQClient(ctx context.Context, cfg *ClientConfig) (RabbitMQClientInterface, error) { //nolint:ireturn
 	client := &RabbitMQClient{
 		amqpURI:               cfg.ConnectionURI,
 		metric:                cfg.Metric,

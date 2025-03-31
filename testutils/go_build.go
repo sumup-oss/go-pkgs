@@ -3,7 +3,6 @@ package testutils
 import (
 	"bytes"
 	"context"
-	"io/ioutil"
 	stdOs "os"
 	"os/exec"
 	"runtime"
@@ -53,7 +52,7 @@ func (b *Build) Run(ctx context.Context, args ...string) (string, string, error)
 }
 
 func GoBuild(ctx context.Context, binaryPattern, pkgPath string, osExecutor os.OsExecutor) string {
-	tmpFile, err := ioutil.TempFile("", binaryPattern)
+	tmpFile, err := stdOs.CreateTemp("", binaryPattern)
 	if err != nil {
 		log.Fatal(err)
 	}

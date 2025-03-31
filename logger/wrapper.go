@@ -36,7 +36,7 @@ func SetLogger(logger Logger) {
 	std = logger
 }
 
-func GetLogger() Logger {
+func GetLogger() Logger { //nolint:ireturn
 	mu.RLock()
 	defer mu.RUnlock()
 

@@ -177,9 +177,9 @@ func NewFakeRedisServer(
 	port int,
 ) *FakeRedisServer {
 	dockerEnv := []string{
-		fmt.Sprintf("DOCKER_HOST=%s", dockerDaemonHost),
-		fmt.Sprintf("DOCKER_CERT_PATH=%s", dockerCertPath),
-		fmt.Sprintf("DOCKER_TLS_VERIFY=%s", dockerTLSVerify),
+		"DOCKER_HOST=" + dockerDaemonHost,
+		"DOCKER_CERT_PATH=" + dockerCertPath,
+		"DOCKER_TLS_VERIFY=" + dockerTLSVerify,
 	}
 
 	return &FakeRedisServer{
@@ -198,7 +198,7 @@ func (s *FakeRedisServer) RunWithArgs() error {
 	cmd := exec.Command("docker", "run",
 		"-p",
 		fmt.Sprintf("%s:%d:6379/tcp", s.Host, s.Port),
-		fmt.Sprintf("--name=%s", s.dockerContainerName),
+		"--name="+s.dockerContainerName,
 		"-d",
 		"--rm",
 		"-ti",
@@ -217,7 +217,7 @@ func (s *FakeRedisServer) RunWithArgs() error {
 	isHealthy := false
 	log.Println("Waiting for redis to be healthy")
 
-	for i := 0; i < 15; i++ {
+	for range 15 {
 		if s.IsHealthy() {
 			isHealthy = true
 
@@ -237,7 +237,7 @@ func (s *FakeRedisServer) RunWithArgs() error {
 
 func (s *FakeRedisServer) Stop() error {
 	// NOTE: Ignore error since we clean optimistically
-	// nolint:gosec
+	//nolint:gosec
 	cmd := exec.Command("docker", "rm", "-fv", s.dockerContainerName)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr

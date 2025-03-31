@@ -99,7 +99,7 @@ func (p *RetryableProducer) newProducer(ctx context.Context) (*Producer, error) 
 	if ctx.Err() != nil {
 		p.logger.Info("received context cancel")
 
-		return nil, nil // nolint: nilerr
+		return nil, nil //nolint: nilnil,nilerr
 	}
 
 	client, err := p.clientFactory(ctx, p.config.RabbitClientConfig)
@@ -107,7 +107,7 @@ func (p *RetryableProducer) newProducer(ctx context.Context) (*Producer, error) 
 		return nil, stacktrace.Propagate(err, "RabbitMQ Failed to init client")
 	}
 
-	producer, err := NewProducer(client, p.logger, p.metric)
+	producer, err := NewProducer(client, p.logger, p.metric) //nolint:contextcheck
 	if err != nil {
 		connCloseErr := client.Close()
 		p.logger.Error("cannot close RabbitMQ client connection", zap.Error(connCloseErr))

@@ -15,7 +15,6 @@
 package testutils
 
 import (
-	"fmt"
 	"io"
 	"os"
 	"os/exec"
@@ -37,11 +36,10 @@ func RunCommandInSameProcess(cmd *cobra.Command, args []string, output io.Writer
 }
 
 // RunCommandInSubprocess is a test helper function to test CLI in end-to-end tests
-// by running them in a separate subprocess, but not being able able to mock/stub behavior.
-// nolint: thelper
-func RunCommandInSubprocess(t *testing.T, args ...string) *exec.Cmd {
+// by running them in a separate subprocess, but not being able to mock/stub behavior.
+func RunCommandInSubprocess(t *testing.T, args ...string) *exec.Cmd { //nolint:thelper
 	cmdArgs := []string{
-		fmt.Sprintf("-test.run=%s", t.Name()),
+		"-test.run=" + t.Name(),
 		"--",
 	}
 	cmdArgs = append(cmdArgs, args...)

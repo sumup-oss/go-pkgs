@@ -31,9 +31,10 @@ import (
 // it will add a `trace` field in the log with the error stack trace.
 //
 // The Location interface looks like this:
-//   interface {
-//		Location() (function, file string, line int)
-//	}
+//
+//	  interface {
+//			Location() (function, file string, line int)
+//		}
 func ErrorField(err error) zap.Field {
 	if err == nil {
 		return zap.Skip()

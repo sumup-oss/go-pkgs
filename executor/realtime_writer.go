@@ -31,7 +31,7 @@ type RealtimeWriter struct {
 }
 
 func NewRealtimeWriter(log logger.Logger, logLevel logger.Level) *RealtimeWriter {
-	buffer := make([]byte, 0, 20)
+	buffer := make([]byte, 0, 20) //nolint:mnd
 	logBuffer := make([]byte, 0)
 
 	return &RealtimeWriter{
@@ -42,7 +42,7 @@ func NewRealtimeWriter(log logger.Logger, logLevel logger.Level) *RealtimeWriter
 	}
 }
 
-func (writer *RealtimeWriter) Write(p []byte) (n int, err error) {
+func (writer *RealtimeWriter) Write(p []byte) (int, error) {
 	writer.log(p)
 	written, err := writer.buffer.Write(p)
 

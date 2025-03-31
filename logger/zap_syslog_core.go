@@ -35,7 +35,7 @@ func NewZapSyslogCore(enab zapcore.LevelEnabler, encoder zapcore.Encoder, writer
 	}
 }
 
-func (core *ZapSyslogCore) With(fields []zapcore.Field) zapcore.Core {
+func (core *ZapSyslogCore) With(fields []zapcore.Field) zapcore.Core { //nolint:ireturn
 	clone := core.clone()
 	for _, field := range fields {
 		field.AddTo(clone.encoder)
@@ -45,7 +45,8 @@ func (core *ZapSyslogCore) With(fields []zapcore.Field) zapcore.Core {
 }
 
 // NOTE: We pass `entry` by value to satisfy the interface requirements
-// nolint:gocritic
+//
+//nolint:gocritic
 func (core *ZapSyslogCore) Check(entry zapcore.Entry, checked *zapcore.CheckedEntry) *zapcore.CheckedEntry {
 	if core.Enabled(entry.Level) {
 		return checked.AddCore(entry, core)
@@ -55,7 +56,8 @@ func (core *ZapSyslogCore) Check(entry zapcore.Entry, checked *zapcore.CheckedEn
 }
 
 // NOTE: We pass `entry` by value to satisfy the interface requirements
-// nolint:gocritic
+//
+//nolint:gocritic
 func (core *ZapSyslogCore) Write(entry zapcore.Entry, fields []zapcore.Field) error {
 	buffer, err := core.encoder.EncodeEntry(entry, fields)
 	if err != nil {
@@ -75,6 +77,8 @@ func (core *ZapSyslogCore) Write(entry zapcore.Entry, fields []zapcore.Field) er
 		return core.writer.WriteLevel(gsyslog.LOG_ERR, message)
 	case zapcore.DPanicLevel, zapcore.PanicLevel, zapcore.FatalLevel:
 		return core.writer.WriteLevel(gsyslog.LOG_CRIT, message)
+	case zapcore.InvalidLevel:
+		return errors.New("invalid log level: %v", entry.Level)
 	default:
 		return errors.New("unknown log level: %v", entry.Level)
 	}

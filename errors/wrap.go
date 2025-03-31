@@ -33,7 +33,7 @@ func Unwrap(err error) error {
 // On the other hand they will continue to be discoverable with UnwrapHidden, which makes it
 // possible to extract the full stacktrace (frame info) even if the error is hiding older errors.
 func UnwrapHidden(err error) error {
-	hidden, ok := err.(interface {
+	hidden, ok := err.(interface { //nolint:varnamelen
 		UnwrapHidden() error
 	})
 
@@ -64,17 +64,18 @@ func As(err error, target interface{}) bool {
 
 // Wrap creates a new error wrapping the err.
 // If the err is nil it will return nil.
-func Wrap(err error, format string, a ...interface{}) error {
+func Wrap(err error, format string, a ...interface{}) error { //nolint:varnamelen
 	if err == nil {
 		return nil
 	}
 
 	return &wrapError{
+		Frame: Caller(1),
 		err: &stringError{
 			msg: fmt.Sprintf(format, a...),
 		},
 		cause: err,
-		Frame: Caller(1),
+		hide:  false,
 	}
 }
 
@@ -90,6 +91,7 @@ func WrapError(err error, wrapper error) error {
 		Frame: Caller(1),
 		err:   wrapper,
 		cause: err,
+		hide:  false,
 	}
 }
 
@@ -97,9 +99,9 @@ func WrapError(err error, wrapper error) error {
 //
 // This means that Is and As will not be able to detect any older error in the chain.
 //
-// Nevertheless the wrapped err and all older errors in the chain are discoverable by using
+// Nevertheless, the wrapped err and all older errors in the chain are discoverable by using
 // UnwrapHidden calls, meaning that the stacktrace (frame info) is accessible.
-func Hide(err error, format string, a ...interface{}) error {
+func Hide(err error, format string, a ...interface{}) error { //nolint:varnamelen
 	if err == nil {
 		return nil
 	}

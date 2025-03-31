@@ -14,7 +14,7 @@
 
 package logger
 
-type Logger interface {
+type Logger interface { //nolint:interfacebloat
 	Debug(args ...interface{})
 	Print(args ...interface{})
 	Info(args ...interface{})

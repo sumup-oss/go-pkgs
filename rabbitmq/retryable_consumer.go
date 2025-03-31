@@ -104,7 +104,7 @@ func (c *RetryableConsumer) doRun(ctx context.Context) error {
 	if ctx.Err() != nil {
 		c.logger.Info("received context cancel")
 
-		return nil // nolint: nilerr
+		return nil
 	}
 
 	client, err := c.clientFactory(ctx, c.config.RabbitClientConfig)

@@ -30,13 +30,15 @@ linters-settings:
     min-len: 2
     min-occurrences: 2
   depguard:
-    list-type: blacklist
-    packages:
-      # logging is allowed only by logutils.Log, logrus
-      # is allowed to use only in logutils package
-      - github.com/sirupsen/logrus
-      # NOTE: Be very, very wary not to use GPL3 software as library
-      - github.com/golangci/golangci-lint
+    rules:
+      main:
+        deny:
+          # logging is allowed only by logutils.Log, logrus
+          # is allowed to use only in logutils package
+          - pkg: "github.com/sirupsen/logrus"
+            desc: "use the github.com/sumup-oss/logger package instead"
+            # NOTE: Be very, very wary not to use GPL3 software as library
+          - pkg: "github.com/golangci/golangci-lint"
   misspell:
     locale: US
   lll:
@@ -74,9 +76,6 @@ linters:
     - funlen
     # `TODO` comments are not offences.
     - godox
-    # It is sometimes beneficial to create structs with default zero values,
-    # without writing all those zero values.
-    - exhaustivestruct
     # Short ifs are ugly.
     - ifshort
     # Things like cyclomatic complexity will be left to the developer's critical thinking.
@@ -88,7 +87,7 @@ linters:
     # We just don't like revive.
     - revive
     # It's good, but the code is not yet migrated.
-    - goerr113
+    - err113
     # We use stacktrace, which is incompatible with standard errors wrapping.
     - wrapcheck
     # We use stacktrace, which is incompatible with standard errors wrapping.

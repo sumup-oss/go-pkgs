@@ -18,7 +18,6 @@ import (
 	"crypto/rsa"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"log"
 	"net"
 	"os"
@@ -63,9 +62,9 @@ func NewFakeGitServer(
 	dockerTLSVerify string,
 ) *FakeGitServer {
 	dockerEnv := []string{
-		fmt.Sprintf("DOCKER_HOST=%s", dockerDaemonHost),
-		fmt.Sprintf("DOCKER_CERT_PATH=%s", dockerCertPath),
-		fmt.Sprintf("DOCKER_TLS_VERIFY=%s", dockerTLSVerify),
+		"DOCKER_HOST=" + dockerDaemonHost,
+		"DOCKER_CERT_PATH=" + dockerCertPath,
+		"DOCKER_TLS_VERIFY=" + dockerTLSVerify,
 	}
 
 	return &FakeGitServer{
@@ -131,11 +130,8 @@ func DefaultGitServer() *FakeGitServer {
 
 func (s *FakeGitServer) PrepareGitEnv(privKeyPath, username, repositoryName, gitWorkDir string) map[string]string {
 	return map[string]string{
-		"GIT_SSH_COMMAND": fmt.Sprintf(
-			"ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i %s",
-			privKeyPath,
-		),
-		"GIT_REPOSITORY_URL": fmt.Sprintf(
+		"GIT_SSH_COMMAND": "ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i " + privKeyPath,
+		"GIT_REPOSITORY_URL": fmt.Sprintf( //nolint:nosprintfhostport
 			"ssh://%s@%s:%d/~/%s.git",
 			username,
 			s.Host,
@@ -197,7 +193,7 @@ func (s *FakeGitServer) CreateRemoteGitRepo(privKeyPath, username, repositoryNam
 		"-p",
 		strconv.FormatInt(int64(s.Port), 10),
 		"init",
-		fmt.Sprintf("%s.git", repositoryName),
+		repositoryName + ".git",
 	}
 	cmd := exec.Command("ssh", args...)
 	cmd.Stdout = os.Stdout
@@ -214,7 +210,7 @@ func (s *FakeGitServer) CreateRemoteGitRepo(privKeyPath, username, repositoryNam
 }
 
 func (s *FakeGitServer) CloneRemoteGitRepo(gitEnv map[string]string) (string, error) {
-	// nolint:gosec
+	//nolint:gosec
 	cmd := exec.Command("git", "clone", gitEnv["GIT_REPOSITORY_URL"], gitEnv["GIT_WORK_DIR"])
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
@@ -242,13 +238,13 @@ func (s *FakeGitServer) copyFile(srcPath, dstPath string) error {
 		return stacktrace.Propagate(err, "failed to copy file contents from %s to %s", srcPath, dstPath)
 	}
 
-	err = os.Chmod(dstPath, 0644)
+	err = os.Chmod(dstPath, 0644) //nolint:mnd
 
 	return stacktrace.Propagate(err, "failed to change file permissions, path %s", dstPath)
 }
 
 func (s *FakeGitServer) renderTemplate(srcPath, dstPath string, templateData interface{}) error {
-	content, err := ioutil.ReadFile(srcPath)
+	content, err := os.ReadFile(srcPath)
 	if err != nil {
 		return stacktrace.Propagate(err, "failed reading template file %s", srcPath)
 	}
@@ -285,7 +281,7 @@ func (s *FakeGitServer) AddDirToGitRepo(
 		dstPath := filepath.Join(gitEnv["GIT_WORK_DIR"], relativePath)
 
 		if info.IsDir() {
-			err = os.MkdirAll(dstPath, 0755)
+			err = os.MkdirAll(dstPath, 0755) //nolint:mnd
 
 			return stacktrace.Propagate(err, "failed to create directory %s", dstPath)
 		}
@@ -353,12 +349,12 @@ func (s *FakeGitServer) AddFilesToGitRepo(gitEnv map[string]string, files map[st
 		fullFilePath := filepath.Join(gitEnv["GIT_WORK_DIR"], relativeFilePath)
 		dir := filepath.Dir(fullFilePath)
 
-		err := os.MkdirAll(dir, 0755)
+		err := os.MkdirAll(dir, 0755) //nolint:mnd
 		if err != nil {
 			return stacktrace.Propagate(err, "failed to create dir")
 		}
 
-		err = ioutil.WriteFile(fullFilePath, []byte(fileContent), 0755) // nolint: gosec
+		err = os.WriteFile(fullFilePath, []byte(fileContent), 0755) //nolint: gosec,mnd
 		if err != nil {
 			return stacktrace.Propagate(err, "failed to write file")
 		}
@@ -407,14 +403,14 @@ func (s *FakeGitServer) AddFilesToGitRepo(gitEnv map[string]string, files map[st
 	return stacktrace.Propagate(err, "failed to git push files")
 }
 
-// nolint: thelper
+//nolint:thelper
 func (s *FakeGitServer) SetupForGitRepo(
 	t *testing.T,
 	tempDir string,
 	gitRepoFiles map[string]string,
 ) (map[string]string, string) {
 	// NOTE: Also used as remote user name
-	repositoryName := RandString(16)
+	repositoryName := RandString(16) //nolint:mnd
 	username := repositoryName
 	privKeyPath, privkey := GenerateAndWritePrivateKey(
 		t,
@@ -425,17 +421,17 @@ func (s *FakeGitServer) SetupForGitRepo(
 	gitEnv := s.PrepareGitEnv(privKeyPath, username, repositoryName, gitWorkDir)
 
 	err := s.AddRemoteGitUser(username, privkey)
-	require.Nil(t, err)
+	require.NoError(t, err)
 
 	err = s.CreateRemoteGitRepo(privKeyPath, username, repositoryName)
-	require.Nil(t, err)
+	require.NoError(t, err)
 
 	_, err = s.CloneRemoteGitRepo(gitEnv)
-	require.Nil(t, err)
+	require.NoError(t, err)
 
 	if len(gitRepoFiles) > 0 {
 		err = s.AddFilesToGitRepo(gitEnv, gitRepoFiles)
-		require.Nil(t, err)
+		require.NoError(t, err)
 	}
 
 	return gitEnv, gitWorkDir
@@ -449,7 +445,7 @@ func (s *FakeGitServer) PrepareGitServerWithArgs() error {
 	cmd := exec.Command("docker", "run",
 		"-p",
 		fmt.Sprintf("%s:%d:22/tcp", s.Host, s.Port),
-		fmt.Sprintf("--name=%s", s.dockerContainerName),
+		"--name="+s.dockerContainerName,
 		"-d",
 		"--rm",
 		"-ti",
@@ -468,7 +464,7 @@ func (s *FakeGitServer) PrepareGitServerWithArgs() error {
 	isHealthy := false
 	log.Printf("Waiting for GIT %s to be healthy\n", GitDockerImage)
 
-	for i := 0; i < 15; i++ {
+	for range 15 {
 		if s.IsGitHealthy() {
 			isHealthy = true
 

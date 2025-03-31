@@ -229,9 +229,9 @@ func NewFakePostgresServer(
 	database string,
 ) *FakePostgresServer {
 	dockerEnv := []string{
-		fmt.Sprintf("DOCKER_HOST=%s", dockerDaemonHost),
-		fmt.Sprintf("DOCKER_CERT_PATH=%s", dockerCertPath),
-		fmt.Sprintf("DOCKER_TLS_VERIFY=%s", dockerTLSVerify),
+		"DOCKER_HOST=" + dockerDaemonHost,
+		"DOCKER_CERT_PATH=" + dockerCertPath,
+		"DOCKER_TLS_VERIFY=" + dockerTLSVerify,
 	}
 
 	return &FakePostgresServer{
@@ -265,13 +265,13 @@ func (s *FakePostgresServer) RunWithArgs() error {
 	cmd := exec.Command("docker", "run",
 		"-p",
 		fmt.Sprintf("%s:%d:5432/tcp", s.host, s.port),
-		fmt.Sprintf("--name=%s", s.dockerContainerName),
+		"--name="+s.dockerContainerName,
 		"-e",
-		fmt.Sprintf("POSTGRES_USER=%s", s.user),
+		"POSTGRES_USER="+s.user,
 		"-e",
-		fmt.Sprintf("POSTGRES_PASSWORD=%s", s.password),
+		"POSTGRES_PASSWORD="+s.password,
 		"-e",
-		fmt.Sprintf("POSTGRES_DB=%s", s.database),
+		"POSTGRES_DB="+s.database,
 		"-d",
 		"--rm",
 		"-ti",
@@ -290,7 +290,7 @@ func (s *FakePostgresServer) RunWithArgs() error {
 	isHealthy := false
 	log.Println("Waiting for Postgres to be healthy")
 
-	for i := 0; i < 15; i++ {
+	for range 15 {
 		if s.IsHealthy() {
 			isHealthy = true
 
@@ -310,7 +310,7 @@ func (s *FakePostgresServer) RunWithArgs() error {
 
 func (s *FakePostgresServer) Stop() error {
 	// NOTE: Ignore error since we clean optimistically
-	// nolint:gosec
+	//nolint:gosec
 	cmd := exec.Command("docker", "rm", "-fv", s.dockerContainerName)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr

@@ -15,7 +15,6 @@
 package testutils
 
 import (
-	"io/ioutil"
 	"os"
 	"testing"
 )
@@ -24,7 +23,7 @@ import (
 func TestDir(t *testing.T, dirPrefix string) string {
 	t.Helper()
 
-	tmp, err := ioutil.TempDir("", dirPrefix)
+	tmp, err := os.MkdirTemp("", dirPrefix) //nolint:usetesting
 	if err != nil {
 		t.Fatalf("err: %v", err)
 	}
@@ -36,7 +35,7 @@ func TestDir(t *testing.T, dirPrefix string) string {
 func TestChdir(t *testing.T, dir string) {
 	t.Helper()
 
-	err := os.Chdir(dir)
+	err := os.Chdir(dir) //nolint:usetesting
 	if err != nil {
 		t.Fatalf("err: %v", err)
 	}

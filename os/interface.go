@@ -22,7 +22,7 @@ import (
 )
 
 type (
-	OsExecutor interface {
+	OsExecutor interface { //nolint:interfacebloat
 		AppendToFile(path string, data []byte, perm os.FileMode) error
 		Args() []string
 		Chdir(dir string) error
@@ -50,7 +50,7 @@ type (
 		MkdirAll(dirname string, perm os.FileMode) error
 		Open(name string) (*os.File, error)
 		OpenFile(path string, flag int, perm os.FileMode) (*os.File, error)
-		ReadDir(dirname string) ([]os.FileInfo, error)
+		ReadDir(dirname string) ([]os.DirEntry, error)
 		ReadFile(filename string) ([]byte, error)
 		Readlink(name string) (string, error)
 		Remove(path string) error

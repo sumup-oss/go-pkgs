@@ -15,8 +15,6 @@
 package testutils
 
 import (
-	"fmt"
-	"io/ioutil"
 	"os"
 	"regexp"
 	"testing"
@@ -28,14 +26,14 @@ import (
 func AssertGolden(t *testing.T, path string, actual []byte) {
 	t.Helper()
 
-	// nolint:goconst
+	//nolint:goconst
 	if os.Getenv("UPDATE_GOLDEN") == "on" {
-		err := ioutil.WriteFile(path, actual, 0644) // nolint: gosec
-		require.Nil(t, err)
+		err := os.WriteFile(path, actual, 0644) //nolint: gosec,mnd
+		require.NoError(t, err)
 	}
 
-	expected, err := ioutil.ReadFile(path)
-	require.Nil(t, err)
+	expected, err := os.ReadFile(path)
+	require.NoError(t, err)
 
 	assert.Equal(t, string(expected), string(actual))
 }
@@ -46,22 +44,22 @@ func AssertGoldenTemplate(t *testing.T, path string, templateVars map[string]str
 	if os.Getenv("UPDATE_GOLDEN") == "on" {
 		templateContent := actual
 		for k, v := range templateVars {
-			re := regexp.MustCompile(fmt.Sprintf("(?m)%s", regexp.QuoteMeta(v)))
+			re := regexp.MustCompile("(?m)" + regexp.QuoteMeta(v))
 			templateContent = re.ReplaceAll(
 				templateContent,
-				[]byte(fmt.Sprintf("__GOLDENVAR_%s", k)),
+				[]byte("__GOLDENVAR_"+k),
 			)
 		}
 
-		err := ioutil.WriteFile(path, templateContent, 0644) // nolint: gosec
-		require.Nil(t, err)
+		err := os.WriteFile(path, templateContent, 0644) //nolint: gosec,mnd
+		require.NoError(t, err)
 	}
 
-	expected, err := ioutil.ReadFile(path)
-	require.Nil(t, err)
+	expected, err := os.ReadFile(path)
+	require.NoError(t, err)
 
 	for k, v := range templateVars {
-		re := regexp.MustCompile("(?m)" + regexp.QuoteMeta(fmt.Sprintf("__GOLDENVAR_%s", k)))
+		re := regexp.MustCompile("(?m)" + regexp.QuoteMeta("__GOLDENVAR_"+k))
 		expected = re.ReplaceAll(expected, []byte(v))
 	}
 
