@@ -4,6 +4,7 @@ go 1.24.1
 
 replace (
 	github.com/sumup-oss/go-pkgs/backoff => ./backoff
+	github.com/sumup-oss/go-pkgs/executor/vault => ./executor/vault
 	github.com/sumup-oss/go-pkgs/logger => ./logger
 )
 
