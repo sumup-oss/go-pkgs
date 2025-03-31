@@ -19,17 +19,17 @@ import (
 	stdRsa "crypto/rsa"
 	"crypto/x509"
 	"encoding/pem"
-	"io/ioutil"
+	"os"
 	"path/filepath"
 	"testing"
 
 	"github.com/stretchr/testify/require"
 )
 
-// nolint: thelper
+//nolint:thelper
 func GenerateAndWritePrivateKey(t *testing.T, tmpDir, keyName string) (string, *stdRsa.PrivateKey) {
-	privKey, err := stdRsa.GenerateKey(rand.Reader, 2048)
-	require.Nil(t, err)
+	privKey, err := stdRsa.GenerateKey(rand.Reader, 2048) //nolint:mnd
+	require.NoError(t, err)
 
 	keyPath := filepath.Join(tmpDir, keyName)
 
@@ -40,18 +40,18 @@ func GenerateAndWritePrivateKey(t *testing.T, tmpDir, keyName string) (string, *
 		},
 	)
 
-	err = ioutil.WriteFile(keyPath, pemBytes, 0600)
-	require.Nil(t, err)
+	err = os.WriteFile(keyPath, pemBytes, 0600) //nolint:mnd
+	require.NoError(t, err)
 
 	return keyPath, privKey
 }
 
-// nolint: thelper
+//nolint:thelper
 func GenerateAndWritePublicKey(t *testing.T, tmpDir, keyName string, privKey *stdRsa.PrivateKey) string {
 	keyPath := filepath.Join(tmpDir, keyName)
 
 	pubkeyBytes, err := x509.MarshalPKIXPublicKey(&privKey.PublicKey)
-	require.Nil(t, err)
+	require.NoError(t, err)
 
 	pemBytes := pem.EncodeToMemory(
 		&pem.Block{
@@ -60,8 +60,8 @@ func GenerateAndWritePublicKey(t *testing.T, tmpDir, keyName string, privKey *st
 		},
 	)
 
-	err = ioutil.WriteFile(keyPath, pemBytes, 0644) // nolint: gosec
-	require.Nil(t, err)
+	err = os.WriteFile(keyPath, pemBytes, 0644) //nolint: gosec,mnd
+	require.NoError(t, err)
 
 	return keyPath
 }

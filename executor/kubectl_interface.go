@@ -6,7 +6,7 @@ import (
 	pkgOs "github.com/sumup-oss/go-pkgs/os"
 )
 
-type KubectlInterface interface {
+type KubectlInterface interface { //nolint:interfacebloat
 	Apply(manifest string, namespace string) error
 	Delete(manifest string) error
 	Create(manifest string) error

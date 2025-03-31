@@ -75,15 +75,15 @@ func (f *FakeOsExecutor) Execute(
 	args := f.Called(cmd, arg, env, dir)
 	rawStdout := args.Get(0)
 	rawStderr := args.Get(1)
-	returnErr := args.Error(2)
+	returnErr := args.Error(2) //nolint:mnd
 
 	var returnStdout, returnStderr []byte
 	if rawStdout != nil {
-		returnStdout = rawStdout.([]byte) // nolint:forcetypeassert
+		returnStdout = rawStdout.([]byte) //nolint:forcetypeassert
 	}
 
 	if rawStderr != nil {
-		returnStderr = rawStderr.([]byte) // nolint:forcetypeassert
+		returnStderr = rawStderr.([]byte) //nolint:forcetypeassert
 	}
 
 	return returnStdout, returnStderr, returnErr
@@ -99,15 +99,15 @@ func (f *FakeOsExecutor) ExecuteContext(
 	args := f.Called(ctx, cmd, arg, env, dir)
 	rawStdout := args.Get(0)
 	rawStderr := args.Get(1)
-	returnErr := args.Error(2)
+	returnErr := args.Error(2) //nolint:mnd
 
 	var returnStdout, returnStderr []byte
 	if rawStdout != nil {
-		returnStdout = rawStdout.([]byte) // nolint:forcetypeassert
+		returnStdout = rawStdout.([]byte) //nolint:forcetypeassert
 	}
 
 	if rawStderr != nil {
-		returnStderr = rawStderr.([]byte) // nolint:forcetypeassert
+		returnStderr = rawStderr.([]byte) //nolint:forcetypeassert
 	}
 
 	return returnStdout, returnStderr, returnErr
@@ -130,7 +130,7 @@ func (f *FakeOsExecutor) Stderr() io.Writer {
 		return nil
 	}
 
-	return returnValue.(io.Writer)
+	return returnValue.(io.Writer) //nolint:forcetypeassert
 }
 
 func (f *FakeOsExecutor) Stdin() io.Reader {
@@ -140,7 +140,7 @@ func (f *FakeOsExecutor) Stdin() io.Reader {
 		return nil
 	}
 
-	return returnValue.(io.Reader)
+	return returnValue.(io.Reader) //nolint:forcetypeassert
 }
 
 func (f *FakeOsExecutor) Stdout() io.Writer {
@@ -150,7 +150,7 @@ func (f *FakeOsExecutor) Stdout() io.Writer {
 		return nil
 	}
 
-	return returnValue.(io.Writer)
+	return returnValue.(io.Writer) //nolint:forcetypeassert
 }
 
 func (f *FakeOsExecutor) Args() []string {
@@ -160,7 +160,7 @@ func (f *FakeOsExecutor) Args() []string {
 		return nil
 	}
 
-	return returnValue.([]string)
+	return returnValue.([]string) //nolint:forcetypeassert
 }
 
 func (f *FakeOsExecutor) Stat(filepath string) (stdOs.FileInfo, error) {
@@ -172,7 +172,7 @@ func (f *FakeOsExecutor) Stat(filepath string) (stdOs.FileInfo, error) {
 		return nil, err
 	}
 
-	return returnValue.(stdOs.FileInfo), err
+	return returnValue.(stdOs.FileInfo), err //nolint:forcetypeassert
 }
 
 func (f *FakeOsExecutor) IsNotExist(err error) bool {
@@ -191,7 +191,7 @@ func (f *FakeOsExecutor) OpenFile(path string, flag int, perm stdOs.FileMode) (*
 		return nil, err
 	}
 
-	return returnValue.(*stdOs.File), err
+	return returnValue.(*stdOs.File), err //nolint:forcetypeassert
 }
 
 func (f *FakeOsExecutor) WriteFile(path string, data []byte, perm stdOs.FileMode) error {
@@ -271,7 +271,7 @@ func (f *FakeOsExecutor) CurrentUser() (*user.User, error) {
 		return nil, err
 	}
 
-	return returnValue.(*user.User), err
+	return returnValue.(*user.User), err //nolint:forcetypeassert
 }
 
 func (f *FakeOsExecutor) Create(name string) (*stdOs.File, error) {
@@ -282,10 +282,10 @@ func (f *FakeOsExecutor) Create(name string) (*stdOs.File, error) {
 		return nil, err
 	}
 
-	return returnValue.(*stdOs.File), err
+	return returnValue.(*stdOs.File), err //nolint:forcetypeassert
 }
 
-func (f *FakeOsExecutor) ReadFile(filename string) (bytes []byte, e error) {
+func (f *FakeOsExecutor) ReadFile(filename string) ([]byte, error) {
 	args := f.Called(filename)
 	returnValue := args.Get(0)
 	err := args.Error(1)
@@ -293,7 +293,7 @@ func (f *FakeOsExecutor) ReadFile(filename string) (bytes []byte, e error) {
 		return nil, err
 	}
 
-	return returnValue.([]byte), err
+	return returnValue.([]byte), err //nolint:forcetypeassert
 }
 
 func (f *FakeOsExecutor) IsDir(path string) error {
@@ -328,10 +328,10 @@ func (f *FakeOsExecutor) TempFile(dir, pattern string) (*stdOs.File, error) {
 		return nil, err
 	}
 
-	return returnValue.(*stdOs.File), err
+	return returnValue.(*stdOs.File), err //nolint:forcetypeassert
 }
 
-func (f *FakeOsExecutor) ReadDir(dirname string) ([]stdOs.FileInfo, error) {
+func (f *FakeOsExecutor) ReadDir(dirname string) ([]stdOs.DirEntry, error) {
 	args := f.Called(dirname)
 	returnValue := args.Get(0)
 	err := args.Error(1)
@@ -339,7 +339,7 @@ func (f *FakeOsExecutor) ReadDir(dirname string) ([]stdOs.FileInfo, error) {
 		return nil, err
 	}
 
-	return returnValue.([]stdOs.FileInfo), err
+	return returnValue.([]stdOs.DirEntry), err //nolint:forcetypeassert
 }
 
 func (f *FakeOsExecutor) Chmod(name string, mode stdOs.FileMode) error {
@@ -374,7 +374,7 @@ func (f *FakeOsExecutor) Open(name string) (*stdOs.File, error) {
 		return nil, err
 	}
 
-	return returnValue.(*stdOs.File), err
+	return returnValue.(*stdOs.File), err //nolint:forcetypeassert
 }
 
 func (f *FakeOsExecutor) Readlink(name string) (string, error) {
@@ -397,7 +397,7 @@ func (f *FakeOsExecutor) Lstat(name string) (stdOs.FileInfo, error) {
 		return nil, err
 	}
 
-	return returnValue.(stdOs.FileInfo), err
+	return returnValue.(stdOs.FileInfo), err //nolint:forcetypeassert
 }
 
 func (f *FakeOsExecutor) SetStderr(v io.Writer) {

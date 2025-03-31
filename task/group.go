@@ -27,7 +27,7 @@ import (
 // first encountered error.
 type Group struct {
 	wg             sync.WaitGroup
-	ctx            context.Context
+	ctx            context.Context //nolint:containedctx
 	cancelFunc     context.CancelFunc
 	firstRunErrPtr unsafe.Pointer
 }

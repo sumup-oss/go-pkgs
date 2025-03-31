@@ -119,7 +119,7 @@ func (ex *RealOsExecutor) OpenFile(path string, flag int, perm os.FileMode) (*os
 }
 
 func (ex *RealOsExecutor) WriteFile(path string, data []byte, perm os.FileMode) error {
-	return ioutilWriteFile(path, data, perm)
+	return osWriteFile(path, data, perm)
 }
 
 func (ex *RealOsExecutor) ExpandTilde(path string) (string, error) {
@@ -268,7 +268,7 @@ func (ex *RealOsExecutor) Create(name string) (*os.File, error) {
 }
 
 func (ex *RealOsExecutor) ReadFile(filename string) ([]byte, error) {
-	return ioutilReadFile(filename)
+	return osReadFile(filename)
 }
 
 func (ex *RealOsExecutor) IsDir(path string) error {
@@ -301,16 +301,16 @@ func (ex *RealOsExecutor) RemoveAll(path string) error {
 	return osRemoveAll(path)
 }
 
-func (ex *RealOsExecutor) TempDir(dir, prefix string) (name string, err error) {
-	return ioutilTempDir(dir, prefix)
+func (ex *RealOsExecutor) TempDir(dir, prefix string) (string, error) {
+	return osTempDir(dir, prefix)
 }
 
-func (ex *RealOsExecutor) TempFile(dir, pattern string) (f *os.File, err error) {
-	return ioutilTempFile(dir, pattern)
+func (ex *RealOsExecutor) TempFile(dir, pattern string) (*os.File, error) {
+	return osCreateTemp(dir, pattern)
 }
 
-func (ex *RealOsExecutor) ReadDir(dirname string) ([]os.FileInfo, error) {
-	return ioutilReadDir(dirname)
+func (ex *RealOsExecutor) ReadDir(dirname string) ([]os.DirEntry, error) {
+	return osReadDir(dirname)
 }
 
 func (ex *RealOsExecutor) Open(name string) (*os.File, error) {

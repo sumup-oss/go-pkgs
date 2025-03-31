@@ -37,7 +37,7 @@ func NewHelm(executor os.CommandExecutor) *Helm {
 	}
 }
 
-func (h *Helm) ResetExecutor(commandExecutor os.CommandExecutor) os.CommandExecutor {
+func (h *Helm) ResetExecutor(commandExecutor os.CommandExecutor) os.CommandExecutor { //nolint:ireturn
 	old := h.commandExecutor
 	h.commandExecutor = commandExecutor
 
@@ -69,7 +69,7 @@ func (h *Helm) GetManifest(
 			continue
 		}
 
-		cmdArgs = append(
+		cmdArgs = append( //nolint:forcetypeassert
 			cmdArgs,
 			h.prepareSetArgument(key.(string), value.(string), false)...,
 		)
@@ -81,7 +81,7 @@ func (h *Helm) GetManifest(
 			continue
 		}
 
-		cmdArgs = append(
+		cmdArgs = append( //nolint:forcetypeassert
 			cmdArgs,
 			h.prepareSetArgument(key.(string), value.(string), true)...,
 		)

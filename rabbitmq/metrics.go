@@ -14,7 +14,7 @@
 
 package rabbitmq
 
-type Metric interface {
+type Metric interface { //nolint:interfacebloat
 	ObserveRabbitMQConnectionFailed()
 	ObserveRabbitMQConnectionRetry()
 	ObserveRabbitMQConnection()

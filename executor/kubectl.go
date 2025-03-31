@@ -5,7 +5,6 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"strings"
 	"time"
@@ -136,7 +135,7 @@ func NewKubectl(
 	}
 }
 
-func (k *Kubectl) ResetExecutor(commandExecutor pkgOs.CommandExecutor) pkgOs.CommandExecutor {
+func (k *Kubectl) ResetExecutor(commandExecutor pkgOs.CommandExecutor) pkgOs.CommandExecutor { //nolint:ireturn
 	old := k.commandExecutor
 	k.commandExecutor = commandExecutor
 
@@ -144,7 +143,7 @@ func (k *Kubectl) ResetExecutor(commandExecutor pkgOs.CommandExecutor) pkgOs.Com
 }
 
 func (k *Kubectl) compileCommand() []string {
-	var options = make([]string, len(k.GlobalOptions)/2)
+	var options = make([]string, len(k.GlobalOptions)/2) //nolint:mnd
 
 	for key, value := range k.GlobalOptions {
 		options = append(options, fmt.Sprintf("--%s=%s", key, value))
@@ -408,9 +407,9 @@ func (k *Kubectl) GetIngresses(namespace string) ([]*KubernetesIngress, error) {
 }
 
 func (k *Kubectl) ApplyConfigmap(name, namespace string, data map[string]string) error {
-	fd, err := ioutil.TempFile("", "kubernetes-configmap.yaml")
+	fd, err := os.CreateTemp("", "kubernetes-configmap.yaml")
 	if err != nil {
-		return nil // nolint: nilerr
+		return nil
 	}
 
 	defer func() {
@@ -423,7 +422,7 @@ func (k *Kubectl) ApplyConfigmap(name, namespace string, data map[string]string)
 		return err
 	}
 
-	_, err = fd.WriteString(fmt.Sprintf("metadata:\n  name: %s\n  namespace: %s\n", name, namespace))
+	_, err = fmt.Fprintf(fd, "metadata:\n  name: %s\n  namespace: %s\n", name, namespace)
 	if err != nil {
 		return err
 	}
@@ -434,7 +433,7 @@ func (k *Kubectl) ApplyConfigmap(name, namespace string, data map[string]string)
 	}
 
 	for key, value := range data {
-		_, err = fd.WriteString(fmt.Sprintf("  %s: \"%s\"\n", key, value))
+		_, err = fmt.Fprintf(fd, "  %s: \"%s\"\n", key, value)
 		if err != nil {
 			return err
 		}
@@ -449,9 +448,9 @@ func (k *Kubectl) ApplyConfigmap(name, namespace string, data map[string]string)
 }
 
 func (k *Kubectl) ApplyService(service *KubernetesService) error {
-	fd, err := ioutil.TempFile("", "kubernetes-service.json")
+	fd, err := os.CreateTemp("", "kubernetes-service.json")
 	if err != nil {
-		return nil // nolint: nilerr
+		return nil
 	}
 
 	defer func() {

@@ -76,7 +76,7 @@ type BufferedWriter struct {
 
 // NewBufferedWriter creates BufferedWriter instance.
 func NewBufferedWriter(writer io.Writer) *BufferedWriter {
-	buffer := make([]byte, 0, 1024)
+	buffer := make([]byte, 0, 1024) //nolint:mnd
 
 	return &BufferedWriter{
 		writer: writer,

@@ -88,7 +88,7 @@ linters:
     # We just don't like revive.
     - revive
     # It's good, but the code is not yet migrated.
-    - goerr113
+    - err113
     # We use stacktrace, which is incompatible with standard errors wrapping.
     - wrapcheck
     # We use stacktrace, which is incompatible with standard errors wrapping.
