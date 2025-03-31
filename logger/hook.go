@@ -16,5 +16,5 @@ package logger
 
 type Hook interface {
 	Levels() []Level
-	Fire(Entry) error
+	Fire(entry Entry) error
 }

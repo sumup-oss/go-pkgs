@@ -33,9 +33,7 @@ type FakeOsExecutor struct {
 }
 
 // NewFakeOsExecutor creates FakeOsExecutor instance.
-//
-// nolint: thelper
-func NewFakeOsExecutor(t *testing.T) *FakeOsExecutor {
+func NewFakeOsExecutor(t *testing.T) *FakeOsExecutor { //nolint:thelper
 	fake := &FakeOsExecutor{}
 	fake.Test(t)
 

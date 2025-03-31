@@ -15,6 +15,7 @@ jobs:
         os: ["ubuntu-latest", "macos-latest"]
         module:
           - "."
+          - "./backoff"
           - "./errors"
           - "./executor/kubernetes"
           - "./executor/vault"

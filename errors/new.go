@@ -16,20 +16,21 @@ package errors
 
 import "fmt"
 
-// Creates a new error.
+// New creates a new error.
 //
 // It can be used for creating sentinel errors, or as a replacement of the standard
 // fmt.Errorf calls.
 //
-//   NOTE: New does not support the standard %w error wrapping.
-//         Use Wrap, WrapError, Hide and HideError instead.
+//	NOTE: New does not support the standard %w error wrapping.
+//	      Use Wrap, WrapError, Hide and HideError instead.
 func New(format string, a ...interface{}) error {
 	return &wrapError{
+		Frame: Caller(1),
 		err: &stringError{
 			msg: fmt.Sprintf(format, a...),
 		},
 		cause: nil,
-		Frame: Caller(1),
+		hide:  false,
 	}
 }
 
@@ -50,16 +51,18 @@ func Propagate(err error) error {
 	wrapped, ok := err.(*wrapError)
 	if ok {
 		return &wrapError{
+			Frame: Caller(1),
 			err:   wrapped.err,
 			cause: err,
-			Frame: Caller(1),
+			hide:  false,
 		}
 	}
 
 	return &wrapError{
+		Frame: Caller(1),
 		err:   err,
 		cause: nil,
-		Frame: Caller(1),
+		hide:  false,
 	}
 }
 

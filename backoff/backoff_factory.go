@@ -14,17 +14,18 @@ import (
 // which is expensive operation.
 //
 // Example:
-//  // the shared RandomGenerator seeding happens here
-//	backoffFactory := backoff.NewBackoffFactory()
 //
-//	for i := 0; i < 10; i++ {
-//		go func() {
-//			// created backoff instances use a shared RandomGenerator
-//			backoff := backoffFactory.CreateBackoff(backoff.DefaultConfig)
+//	 // the shared RandomGenerator seeding happens here
+//		backoffFactory := backoff.NewBackoffFactory()
 //
-//			// use the backoff
-//		}()
-//	}
+//		for i := 0; i < 10; i++ {
+//			go func() {
+//				// created backoff instances use a shared RandomGenerator
+//				backoff := backoffFactory.CreateBackoff(backoff.DefaultConfig)
+//
+//				// use the backoff
+//			}()
+//		}
 type BackoffFactory struct {
 	randomGen RandomGenerator
 }
@@ -35,7 +36,7 @@ type BackoffFactory struct {
 // SyncRandomGenerator for multi go routine safety.
 func NewBackoffFactory() *BackoffFactory {
 	return &BackoffFactory{
-		randomGen: NewSyncRandomGenerator(rand.New(rand.NewSource(time.Now().UnixNano()))), // nolint: gosec
+		randomGen: NewSyncRandomGenerator(rand.New(rand.NewSource(time.Now().UnixNano()))), //nolint: gosec
 	}
 }
 

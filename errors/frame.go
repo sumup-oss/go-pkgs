@@ -30,13 +30,13 @@ type Frame struct {
 func Caller(skip int) Frame {
 	var frame Frame
 
-	runtime.Callers(skip+2, frame.pc[:])
+	runtime.Callers(skip+2, frame.pc[:]) //nolint:mnd
 
 	return frame
 }
 
 // Location reports the file, line, and function of a frame.
-func (f *Frame) Location() (function, file string, line int) {
+func (f *Frame) Location() (string, string, int) {
 	frame, _ := runtime.CallersFrames(f.pc[:]).Next()
 
 	return frame.Function, frame.File, frame.Line

@@ -403,7 +403,7 @@ func (s *FakeGitServer) AddFilesToGitRepo(gitEnv map[string]string, files map[st
 	return stacktrace.Propagate(err, "failed to git push files")
 }
 
-// nolint: thelper
+//nolint:thelper
 func (s *FakeGitServer) SetupForGitRepo(
 	t *testing.T,
 	tempDir string,

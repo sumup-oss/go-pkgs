@@ -26,8 +26,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-//nolint:thelper
-func GenerateAndWritePrivateKey(t *testing.T, tmpDir, keyName string) (string, *stdRsa.PrivateKey) {
+func GenerateAndWritePrivateKey(t *testing.T, tmpDir, keyName string) (string, *stdRsa.PrivateKey) { //nolint:thelper
 	privKey, err := stdRsa.GenerateKey(rand.Reader, 2048) //nolint:mnd
 	require.NoError(t, err)
 
@@ -46,8 +45,7 @@ func GenerateAndWritePrivateKey(t *testing.T, tmpDir, keyName string) (string, *
 	return keyPath, privKey
 }
 
-//nolint:thelper
-func GenerateAndWritePublicKey(t *testing.T, tmpDir, keyName string, privKey *stdRsa.PrivateKey) string {
+func GenerateAndWritePublicKey(t *testing.T, tmpDir, keyName string, privKey *stdRsa.PrivateKey) string { //nolint:thelper
 	keyPath := filepath.Join(tmpDir, keyName)
 
 	pubkeyBytes, err := x509.MarshalPKIXPublicKey(&privKey.PublicKey)

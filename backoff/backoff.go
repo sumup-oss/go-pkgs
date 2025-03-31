@@ -17,7 +17,7 @@ type Config struct {
 
 var DefaultConfig = &Config{
 	Base:   time.Second,
-	Max:    time.Second * 30,
+	Max:    time.Second * 30, //nolint:mnd
 	Jitter: FullJitter,
 }
 
@@ -28,25 +28,26 @@ var DefaultConfig = &Config{
 // The backoff is calculated by min(Max, rand(0, Base*(2^retries))).
 //
 // Example:
-//	b := backoff.NewBackoff(backoff.DefaultConfig)
 //
-//  for {
-//		err := someFunc()
-//		if err == nil {
-//			// all good
-//			return nil
+//		b := backoff.NewBackoff(backoff.DefaultConfig)
+//
+//	 for {
+//			err := someFunc()
+//			if err == nil {
+//				// all good
+//				return nil
+//			}
+//
+//			// get the next sleep duration
+//			sleep := b.Next()
+//
+//			select {
+//			case <-time.After(sleep):
+//				continue
+//			case <-ctx.Done():
+//				return errors.Wrap(err, "retry canceled")
+//			}
 //		}
-//
-//		// get the next sleep duration
-//		sleep := b.Next()
-//
-// 		select {
-//		case <-time.After(sleep):
-//			continue
-//		case <-ctx.Done():
-//			return errors.Wrap(err, "retry canceled")
-//		}
-//	}
 type Backoff struct {
 	config *Config
 
@@ -65,7 +66,7 @@ type Backoff struct {
 // which is expensive operation.
 func NewBackoff(config *Config) *Backoff {
 	return NewBackoffWithRandomGen(
-		rand.New(rand.NewSource(time.Now().UnixNano())), // nolint: gosec
+		rand.New(rand.NewSource(time.Now().UnixNano())), //nolint: gosec
 		config,
 	)
 }
@@ -73,11 +74,12 @@ func NewBackoff(config *Config) *Backoff {
 // NewBackoffWithRandomGen is used when you want to pass a custom RandomGenerator.
 //
 // Example:
-//  // Note that the backoff created bellow can be used safely only in a single go routine.
-//	b := backoff.New(
-//		rand.New(rand.NewSource(time.Now().UnixNano())),
-//		backoff.DefaultConfig
-//	)
+//
+//	 // Note that the backoff created bellow can be used safely only in a single go routine.
+//		b := backoff.New(
+//			rand.New(rand.NewSource(time.Now().UnixNano())),
+//			backoff.DefaultConfig
+//		)
 func NewBackoffWithRandomGen(randomGen RandomGenerator, config *Config) *Backoff {
 	if config.Base == 0 {
 		config.Base = DefaultConfig.Base

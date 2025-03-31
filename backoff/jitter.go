@@ -9,7 +9,7 @@ func FullJitter(randomGen RandomGenerator, factor int64) time.Duration {
 }
 
 func EqualJitter(randomGen RandomGenerator, factor int64) time.Duration {
-	half := 1 + factor/2
+	half := 1 + factor/2 //nolint:mnd
 
 	return time.Duration(half + randomGen.Int63n(half))
 }

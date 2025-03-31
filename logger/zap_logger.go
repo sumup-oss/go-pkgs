@@ -122,7 +122,7 @@ func NewZapLogger(config Configuration) (*ZapLogger, error) { //nolint:gocritic
 		zap.AddCaller(),
 	)
 
-	if config.Fields != nil && len(config.Fields) > 0 {
+	if len(config.Fields) > 0 {
 		for _, f := range config.Fields {
 			logger = logger.With(f)
 		}
@@ -134,7 +134,7 @@ func NewZapLogger(config Configuration) (*ZapLogger, error) { //nolint:gocritic
 	}, nil
 }
 
-func newEncoder(encoding string, config *zapcore.EncoderConfig) (zapcore.Encoder, error) {
+func newEncoder(encoding string, config *zapcore.EncoderConfig) (zapcore.Encoder, error) { //nolint:ireturn
 	switch encoding {
 	case EncodingJSON:
 		return zapcore.NewJSONEncoder(*config), nil
@@ -168,7 +168,7 @@ func (z *ZapLogger) GetLevel() zapcore.Level {
 
 // With creates a child logger and adds structured context to it. Fields added
 // to the child don't affect the parent, and vice versa.
-func (z *ZapLogger) With(fields ...zap.Field) StructuredLogger {
+func (z *ZapLogger) With(fields ...zap.Field) StructuredLogger { //nolint:ireturn
 	return &ZapLogger{
 		Logger: z.Logger.With(fields...),
 		level:  z.level,

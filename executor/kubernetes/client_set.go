@@ -82,7 +82,7 @@ func (c *ClientSet) GetJWT() (string, error) {
 		clientSet.
 		CoreV1().
 		ServiceAccounts(c.kubernetesNamespace).
-		Get(c.kubernetesServiceAccountName, metav1.GetOptions{})
+		Get(c.kubernetesServiceAccountName, metav1.GetOptions{}) //nolint:exhaustruct
 	if err != nil {
 		return "", stacktrace.Propagate(
 			err,
@@ -110,7 +110,10 @@ func (c *ClientSet) GetJWT() (string, error) {
 		)
 	}
 
-	secret, err := c.clientSet.CoreV1().Secrets(c.kubernetesNamespace).Get(secretName, metav1.GetOptions{})
+	secret, err := c.clientSet.
+		CoreV1().
+		Secrets(c.kubernetesNamespace).
+		Get(secretName, metav1.GetOptions{}) //nolint:exhaustruct
 	if err != nil {
 		return "", stacktrace.Propagate(
 			err, "failed to get kubernetes service account secret token data from namespace "+
@@ -134,6 +137,6 @@ func (c *ClientSet) GetJWT() (string, error) {
 	return string(token), nil
 }
 
-func (c *ClientSet) CoreV1() corev1.CoreV1Interface {
+func (c *ClientSet) CoreV1() corev1.CoreV1Interface { //nolint:ireturn
 	return c.clientSet.CoreV1()
 }
