@@ -33,8 +33,8 @@ type Group struct {
 }
 
 // NewGroup creates new task group instance.
-func NewGroup() *Group {
-	ctx, cancel := context.WithCancel(context.Background())
+func NewGroup(ctx context.Context) *Group {
+	ctx, cancel := context.WithCancel(ctx)
 
 	return &Group{
 		ctx:        ctx,
