@@ -56,9 +56,7 @@ func TestGroup_Go(t *testing.T) {
 	t.Run("it runs the tasks", func(t *testing.T) {
 		t.Parallel()
 
-		ctx := context.Background()
-
-		group := task.NewGroup(ctx)
+		group := task.NewGroup()
 		foo := NewTestTask(nil)
 		bar := NewTestTask(nil)
 
@@ -67,7 +65,7 @@ func TestGroup_Go(t *testing.T) {
 		foo.RunUntil <- nil
 		bar.RunUntil <- nil
 
-		err := group.Wait(ctx)
+		err := group.Wait(context.Background())
 		assert.NoError(t, err)
 
 		assert.Equal(t, 1, foo.RunCount)
@@ -79,9 +77,7 @@ func TestGroup_Go(t *testing.T) {
 	t.Run("when a task from the group returns an error, it cancels all the tasks", func(t *testing.T) {
 		t.Parallel()
 
-		ctx := context.Background()
-
-		group := task.NewGroup(ctx)
+		group := task.NewGroup()
 		foo := NewTestTask(assert.AnError)
 		bar := NewTestTask(nil)
 
@@ -94,7 +90,7 @@ func TestGroup_Go(t *testing.T) {
 			foo.RunUntil <- assert.AnError
 		}()
 
-		err := group.Wait(ctx)
+		err := group.Wait(context.Background())
 		assert.EqualError(t, err, assert.AnError.Error())
 
 		assert.Equal(t, 1, foo.RunCount)
@@ -106,9 +102,7 @@ func TestGroup_Go(t *testing.T) {
 	t.Run("when wait deadline is exceeded, it cancels all tasks", func(t *testing.T) {
 		t.Parallel()
 
-		ctx := context.Background()
-
-		group := task.NewGroup(ctx)
+		group := task.NewGroup()
 
 		foo := NewTestTask(assert.AnError)
 		bar := NewTestTask(nil)
@@ -132,8 +126,7 @@ func TestGroup_Go(t *testing.T) {
 	t.Run("when the group is canceled, it does not start new tasks", func(t *testing.T) {
 		t.Parallel()
 
-		ctx := context.Background()
-		group := task.NewGroup(ctx)
+		group := task.NewGroup()
 		foo := NewTestTask(nil)
 		bar := NewTestTask(nil)
 
@@ -154,9 +147,7 @@ func TestGroup_Cancel(t *testing.T) {
 	t.Run("it cancels all the tasks", func(t *testing.T) {
 		t.Parallel()
 
-		ctx := context.Background()
-
-		group := task.NewGroup(ctx)
+		group := task.NewGroup()
 		foo := NewTestTask(nil)
 		bar := NewTestTask(nil)
 
@@ -180,9 +171,7 @@ func TestGroup_Cancel(t *testing.T) {
 }
 
 func BenchmarkGroup_Go(b *testing.B) {
-	ctx := context.Background()
-
-	group := task.NewGroup(ctx)
+	group := task.NewGroup()
 
 	b.ResetTimer()
 	b.ReportAllocs()
@@ -191,5 +180,5 @@ func BenchmarkGroup_Go(b *testing.B) {
 		group.Go(func(ctx context.Context) error { return nil })
 	}
 
-	group.Wait(ctx)
+	group.Wait(context.TODO())
 }
